@@ -1,5 +1,6 @@
 import { BeaconWallet } from '@taquito/beacon-wallet'
-import { ContractAbstraction, MichelsonMap, TezosToolkit, Wallet } from '@taquito/taquito'
+import { MichelsonV1Expression } from '@taquito/rpc'
+import { ContractAbstraction, MichelsonMap, OpKind, TezosToolkit, Wallet } from '@taquito/taquito'
 import { 
   CancelOfferCall,
   CollectCall,
@@ -17,6 +18,7 @@ import {
   ContractOperationStatus, 
   FxhashContract
 } from '../types/Contracts'
+import { shuffleArray } from '../utils/array'
 import { stringToByteString } from '../utils/convert'
 
 
@@ -47,7 +49,7 @@ export class WalletManager {
   rpcNodes: string[]
 
   constructor() {
-    this.rpcNodes = (process.env.NEXT_PUBLIC_RPC_NODES!).split(',')
+    this.rpcNodes = shuffleArray((process.env.NEXT_PUBLIC_RPC_NODES!).split(','))
     this.tezosToolkit = new TezosToolkit(this.rpcNodes[0])
     this.instanciateBeaconWallet()
   }
@@ -247,7 +249,8 @@ export class WalletManager {
       statusCallback && statusCallback(ContractOperationStatus.CALLING)
       const opSend = await issuerContract.methodsObject.mint(sendData).send({
         amount: tokenData.price,
-        mutez: true
+        mutez: true,
+        storageLimit: 450
       })
   
       // wait for confirmation
@@ -286,7 +289,7 @@ export class WalletManager {
   
       // wait for confirmation
       statusCallback && statusCallback(ContractOperationStatus.WAITING_CONFIRMATION)
-      await opSend.confirmation(2)
+      await opSend.confirmation(1)
   
       // OK, injected
       statusCallback && statusCallback(ContractOperationStatus.INJECTED)
@@ -348,30 +351,110 @@ export class WalletManager {
       // get/create the contract interface
       const objktContract = await this.getContract(FxhashContract.OBJKT)
       const marketContract = await this.getContract(FxhashContract.MARKETPLACE)
-  
+
+      // the origination parameters
+      const updateOperatorsValue: MichelsonV1Expression = [{
+        "prim": "Left",
+        "args": [
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "string": data.ownerAddress
+              },
+              {
+                "prim": "Pair",
+                "args": [
+                  {
+                    "string": addresses.MARKETPLACE
+                  },
+                  {
+                    "int": ""+data.tokenId
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }]
+
+      const listItemValue: MichelsonV1Expression = {
+        "prim": "Pair",
+        "args": [
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "string": data.creatorAddress
+              },
+              {
+                "int": ""+data.tokenId
+              }
+            ]
+          },
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "int": ""+data.price
+              },
+              {
+                "int": ""+data.royalties
+              }
+            ]
+          }
+        ]
+      }
+
       // call the contract (open wallet)
       statusCallback && statusCallback(ContractOperationStatus.CALLING)
       // const opSend = await objktContract.methodsObject.update_operators().getSignature()
       const batchOp = await this.tezosToolkit.wallet.batch() 
-        .withContractCall(
-          objktContract.methodsObject.update_operators([
-            {
-              add_operator: {
-                owner: data.ownerAddress,
-                operator: addresses.MARKETPLACE,
-                token_id: data.tokenId
-              }
-            }
-          ])
-        )
-        .withContractCall(
-          marketContract.methodsObject.offer({
-            price: data.price,
-            objkt_id: data.tokenId,
-            creator: data.creatorAddress, 
-            royalties: data.royalties
-          })
-        )
+        // .withContractCall(
+        //   objktContract.methodsObject.update_operators([
+        //     {
+        //       add_operator: {
+        //         owner: data.ownerAddress,
+        //         operator: addresses.MARKETPLACE,
+        //         token_id: data.tokenId
+        //       }
+        //     }
+        //   ])
+        // )
+        // .withContractCall(
+        //   marketContract.methodsObject.offer({
+        //     price: data.price,
+        //     objkt_id: data.tokenId,
+        //     creator: data.creatorAddress, 
+        //     royalties: data.royalties
+        //   })
+        // )
+        .with([
+          {
+            kind: OpKind.TRANSACTION,
+            to: addresses.OBJKT,
+            fee: 1000,
+            amount: 0,
+            parameter: {
+              entrypoint: "update_operators",
+              value: updateOperatorsValue
+            },
+            gasLimit: 8000,
+            storageLimit: 250,
+          },
+          {
+            kind: OpKind.TRANSACTION,
+            to: addresses.MARKETPLACE,
+            fee: 1500,
+            amount: 0,
+            parameter: {
+              entrypoint: "offer",
+              value: listItemValue,
+            },
+            gasLimit: 10000,
+            storageLimit: 250
+          }
+        ])
         .send()
   
       // wait for confirmation
@@ -442,7 +525,8 @@ export class WalletManager {
       statusCallback && statusCallback(ContractOperationStatus.CALLING)
       const opSend = await marketContract.methodsObject.collect(data.offerId).send({
         mutez: true,
-        amount: data.price
+        amount: data.price,
+        storageLimit: 150
       })
   
       // wait for confirmation

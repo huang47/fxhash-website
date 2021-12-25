@@ -3,15 +3,16 @@ import { CardsContainer } from '../components/Card/CardsContainer'
 import { ObjktCard } from '../components/Card/ObjktCard'
 import { LoaderBlock } from '../components/Layout/LoaderBlock'
 import { InfiniteScrollTrigger } from '../components/Utils/InfiniteScrollTrigger'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Spacing } from '../components/Layout/Spacing'
 import { Offer } from '../types/entities/Offer'
 import { AlgoliaSearch } from '../components/Search/AlgoliaSearch'
 import { searchIndexMarketplace } from '../services/Algolia'
 import { IOptions, Select } from '../components/Input/Select'
+import { CardsLoading } from '../components/Card/CardsLoading'
 
 
-const ITEMS_PER_PAGE = 20
+const ITEMS_PER_PAGE = 10
 
 const Qu_offers = gql`
   query Query ($skip: Int, $take: Int, $price: String, $createdAt: String) {
@@ -23,7 +24,9 @@ const Qu_offers = gql`
         id
         name
         slug
+        assigned
         metadata
+        duplicate
         offer {
           id
           price
@@ -40,6 +43,7 @@ const Qu_offers = gql`
         }
         issuer {
           flag
+          name
           author {
             id
             name
@@ -62,6 +66,8 @@ const Qu_offersByIds = gql`
         name
         slug
         metadata
+        assigned
+        duplicate
         offer {
           id
           price
@@ -78,6 +84,7 @@ const Qu_offersByIds = gql`
         }
         issuer {
           flag
+          name
           author {
             id
             name
@@ -130,7 +137,12 @@ export const Marketplace = ({}: Props) => {
   const [sortValue, setSortValue] = useState<string>("createdAt-desc")
   const sortVariables = useMemo<Record<string, any>>(() => sortValueToSortVariable(sortValue), [sortValue])
 
+  // use to know when to stop loading
+  const currentLength = useRef<number>(0)
+  const ended = useRef<boolean>(false)
+
   const { data, loading, fetchMore, refetch } = useQuery(Qu_offers, {
+    notifyOnNetworkStatusChange: true,
     variables: {
       skip: 0,
       take: ITEMS_PER_PAGE,
@@ -138,8 +150,19 @@ export const Marketplace = ({}: Props) => {
     }
   })
 
+  useEffect(() => {
+    if (!loading) {
+      if (currentLength.current === data.offers?.length) {
+        ended.current = true
+      }
+      else {
+        currentLength.current = data.offers?.length
+      }
+    }
+  }, [loading])
+
   const infiniteScrollFetch = () => {
-    fetchMore?.({
+    !ended.current && fetchMore?.({
       variables: {
         skip: data.offers.length,
         take: ITEMS_PER_PAGE,
@@ -150,6 +173,8 @@ export const Marketplace = ({}: Props) => {
   const offers: Offer[] = data?.offers
 
   useEffect(() => {
+    currentLength.current = 0
+    ended.current = false
     refetch?.({
       skip: 0,
       take: ITEMS_PER_PAGE,
@@ -190,21 +215,18 @@ export const Marketplace = ({}: Props) => {
           <p>Your query did not yield any results. 😟</p>
         )
       ):(
-        loading ? (
-          <LoaderBlock height="100px">loading</LoaderBlock>
-        ):(
-          (offers?.length > 0) ? (
-            <InfiniteScrollTrigger onTrigger={infiniteScrollFetch}>
-              <CardsContainer>
-                {offers.map(offer => (
-                  <ObjktCard key={offer.objkt.id} objkt={offer.objkt}/>
-                ))}
-              </CardsContainer>
-            </InfiniteScrollTrigger>
-          ):(
-            <p>Your query did not yield any results.<br/> We are working on improving our search engine, sorry if you expected to find something 😟</p>
-          )
-        )
+        <InfiniteScrollTrigger onTrigger={infiniteScrollFetch} canTrigger={!!data && !loading}>
+          <CardsContainer>
+            <>
+              {offers?.length > 0 && offers.map(offer => (
+                <ObjktCard key={offer.objkt.id} objkt={offer.objkt}/>
+              ))}
+              {loading && (
+                <CardsLoading number={ITEMS_PER_PAGE} />
+              )}
+            </>
+          </CardsContainer>
+        </InfiniteScrollTrigger>
       )}
 
     </>

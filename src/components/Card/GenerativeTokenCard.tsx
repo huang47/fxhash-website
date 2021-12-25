@@ -2,20 +2,25 @@
 import Link from "next/link"
 import cs from "classnames"
 import { GenerativeToken } from "../../types/entities/GenerativeToken"
+import colors from "../../styles/Colors.module.css"
 import { AnchorForward } from "../Utils/AnchorForward"
 import { Card } from "./Card"
 import { UserBadge } from "../User/UserBadge"
 import { MintProgress } from "../Artwork/MintProgress"
 import { Spacing } from "../Layout/Spacing"
 import { getGenerativeTokenUrl } from "../../utils/generative-token"
+import { displayMutez } from "../../utils/units"
+
 
 interface Props {
   token: GenerativeToken
   className?: string
+  displayPrice?: boolean
 }
 
 export function GenerativeTokenCard({
   token,
+  displayPrice = false,
   className,
 }: Props) {
   const url = getGenerativeTokenUrl(token)
@@ -31,7 +36,13 @@ export function GenerativeTokenCard({
           </div>
           <div>
             <Spacing size="small" />
-            <MintProgress balance={token.balance} supply={token.supply} />
+            <MintProgress balance={token.balance} supply={token.supply}>
+              {displayPrice && (
+                <strong className={cs(colors.secondary)}>
+                  {displayMutez(token.price, 4)} tez
+                </strong>
+              )}
+            </MintProgress>
           </div>
         </Card>
       </AnchorForward>

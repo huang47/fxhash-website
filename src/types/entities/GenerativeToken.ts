@@ -10,6 +10,7 @@ export enum GenTokFlag {
   REPORTED          = "REPORTED",
   AUTO_DETECT_COPY  = "AUTO_DETECT_COPY",
   MALICIOUS         = "MALICIOUS",
+  HIDDEN            = "HIDDEN",
 }
 
 export interface GenerativeTokenMarketStats {
@@ -42,7 +43,12 @@ export interface GenerativeToken {
   royalties: number
   objkts: Objkt[]
   actions: Action[]
+  objktsCount: number
   createdAt: Date
   updatedAt: Date
   marketStats?: GenerativeTokenMarketStats
+}
+
+export interface GenerativeTokenWithCollection extends GenerativeToken {
+  entireCollection: Objkt[]
 }

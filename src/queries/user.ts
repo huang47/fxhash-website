@@ -7,6 +7,7 @@ export const Qu_user = gql`
       name
       metadata
       role
+      flag
       description
       avatarUri
       createdAt
@@ -21,6 +22,7 @@ export const Qu_userGenTokens = gql`
       id
       generativeTokens(take: $take, skip: $skip) {
         id
+        price
         supply
         balance
         name
@@ -42,12 +44,15 @@ export const Qu_userObjkts = gql`
       id
       objkts(take: $take, skip: $skip) {
         id
+        assigned
+        iteration
         owner {
           id
           name
           avatarUri
         }
         issuer {
+          name
           flag
           author {
             id

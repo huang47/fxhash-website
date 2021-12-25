@@ -24,14 +24,15 @@ import { UserGuard } from '../../components/Guards/UserGuard'
 import { truncateEnd } from '../../utils/strings'
 import { TitleHyphen } from '../../components/Layout/TitleHyphen'
 import { ArtworkIframe, ArtworkIframeRef } from '../../components/Artwork/PreviewIframe'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Qu_genToken } from '../../queries/generative-token'
 import { GenerativeActions } from '../../containers/Generative/Actions'
 import { GenerativeExtraActions } from '../../containers/Generative/ExtraActions'
-import { FlagBanner } from '../../containers/Generative/FlagBanner'
+import { GenerativeFlagBanner } from '../../containers/Generative/FlagBanner'
 import { Unlock } from '../../components/Utils/Unlock'
 import { format } from 'date-fns'
 import { getGenerativeTokenMarketplaceUrl } from '../../utils/generative-token'
+import { generateFxHash } from '../../utils/hash'
 
 
 interface Props {
@@ -43,8 +44,13 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
   const collectionUrl = `/generative/${token.id}/collection`
   const iframeRef = useRef<ArtworkIframeRef>(null)
 
+  // used to preview the token in the iframe with different hashes
+  const [previewHash, setPreviewHash] = useState<string|null>(null)
+
   const [mintLocked, setMintLocked] = useState<boolean>(
-    token.flag === GenTokFlag.CLEAN ? false : Date.now() - (new Date(token.createdAt)).getTime() < 1*3600*1000
+    (token.flag === GenTokFlag.CLEAN || (token.supply-token.balance) === 0) 
+      ? false 
+      : Date.now() - (new Date(token.createdAt)).getTime() < 1*3600*1000
   )
 
   const reload = () => {
@@ -53,21 +59,43 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
     }
   }
 
+  // sets a random preview hash to explore the generative token
+  const randomize = () => {
+    setPreviewHash(generateFxHash())
+  }
+
   // get the display url for og:image
   const displayUrl = token.metadata?.displayUri && ipfsGatewayUrl(token.metadata?.displayUri)
+
+  // the direct URL to the resource to display in the <iframe>
+  const artifactUrl = useMemo<string>(() => {
+    // if no hash is forced, use the artifact URI directly
+    if (!previewHash) {
+      return ipfsGatewayUrl(token.metadata.artifactUri, "pinata-fxhash-safe")
+    }
+    else {
+      // there is a forced hash, add it to the generative URL
+      return `${ipfsGatewayUrl(token.metadata.generativeUri, "pinata-fxhash-safe")}?fxhash=${previewHash}`
+    }
+  }, [previewHash])
 
   return (
     <>
       <Head>
         <title>fxhash — {token.name}</title>
-        <meta key="og:title" property="og:title" content={`fxhash — ${token.name}`}/> 
+        <meta key="og:title" property="og:title" content={`${token.name} — fxhash`}/> 
         <meta key="description" name="description" content={truncateEnd(token.metadata?.description || "", 200, "")}/>
         <meta key="og:description" property="og:description" content={truncateEnd(token.metadata?.description || "", 200, "")}/>
         <meta key="og:type" property="og:type" content="website"/>
         <meta key="og:image" property="og:image" content={displayUrl || "https://www.fxhash.xyz/images/og/og1.jpg"}/>
+        <meta name="twitter:site" content="@fx_hash_"/>
+        <meta name="twitter:card" content="summary_large_image"/>
+        <meta name="twitter:title" content={`${token.name} — fxhash`}/>
+        <meta name="twitter:description" content={truncateEnd(token.metadata?.description || "", 200, "")}/>
+        <meta name="twitter:image" content={displayUrl || "https://www.fxhash.xyz/images/og/og1.jpg"}/>
       </Head>
 
-      <FlagBanner token={token}/>
+      <GenerativeFlagBanner token={token}/>
 
       <Spacing size="6x-large" />
 
@@ -112,7 +140,7 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
             )}
             <Spacing size="2x-small"/>
             
-            {token.flag !== GenTokFlag.MALICIOUS && token.balance > 0 && (
+            {!([GenTokFlag.MALICIOUS, GenTokFlag.HIDDEN].includes(token.flag)) && token.balance > 0 && (
               <>
                 {!token.enabled && <small>token is currently <strong>disabled</strong> by author</small>}
                 <div className={cs(style.lock_container)}>
@@ -144,7 +172,7 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
             <div className={cs(style['preview-wrapper'])}>
               <ArtworkIframe 
                 ref={iframeRef}
-                url={ipfsGatewayUrl(token.metadata.artifactUri)}
+                url={artifactUrl}
               />
             </div>
           </div>
@@ -152,6 +180,14 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
           <Spacing size="8px"/>
 
           <div className={cs(layout['x-inline'])}>
+            {/* <Button
+              size="small"
+              iconComp={<i aria-hidden className="fas fa-random"/>}
+              iconSide="right"
+              onClick={randomize}
+            >
+              randomize
+            </Button> */}
             <Button
               size="small"
               iconComp={<i aria-hidden className="fas fa-redo"/>}
@@ -191,11 +227,11 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
             <span><strong>Tags:</strong> { token.tags?.join(", ") || "/" }</span>
             <span><strong>Metadata:</strong> <a href={ipfsGatewayUrl(token.metadataUri)} target="_blank" referrerPolicy="no-referrer">{token.metadataUri}</a></span>
             <Spacing size="3x-small" />
-            {/* <Link href={getGenerativeTokenMarketplaceUrl(token)} passHref>
+            <Link href={getGenerativeTokenMarketplaceUrl(token)} passHref>
               <Button isLink={true} size="small">
                 See marketplace page 
               </Button>
-            </Link> */}
+            </Link>
           </div>
         </main>
       </section>

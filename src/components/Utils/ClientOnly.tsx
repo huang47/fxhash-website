@@ -1,13 +1,10 @@
-import { PropsWithChildren, useEffect, useState } from "react"
+import { PropsWithChildren } from "react"
+import { useIsMountedState } from "../../utils/hookts"
 
 export default function ClientOnly({ children, ...delegated }: PropsWithChildren<{}>) {
-  const [hasMounted, setHasMounted] = useState(false);
+  const isMounted = useIsMountedState()
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, [])
-
-  if (!hasMounted) {
+  if (!isMounted) {
     return null
   }
 
@@ -15,13 +12,9 @@ export default function ClientOnly({ children, ...delegated }: PropsWithChildren
 }
 
 export function ClientOnlyEmpty({ children }: PropsWithChildren<{}>) {
-  const [hasMounted, setHasMounted] = useState(false);
+  const isMounted = useIsMountedState()
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, [])
-
-  if (!hasMounted) {
+  if (!isMounted) {
     return null
   }
 

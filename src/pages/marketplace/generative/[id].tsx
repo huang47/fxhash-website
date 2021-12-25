@@ -19,7 +19,7 @@ import { truncateEnd } from '../../../utils/strings'
 import { useRef, useState } from 'react'
 import { Qu_genToken, Qu_genTokenMarketplace } from '../../../queries/generative-token'
 import { GenerativeActions } from '../../../containers/Generative/Actions'
-import { FlagBanner } from '../../../containers/Generative/FlagBanner'
+import { GenerativeFlagBanner } from '../../../containers/Generative/FlagBanner'
 import { ArtworkPreview } from '../../../components/Artwork/Preview'
 import { getGenerativeTokenUrl } from '../../../utils/generative-token'
 import { TabDefinition, Tabs } from '../../../components/Layout/Tabs'
@@ -49,14 +49,19 @@ const GenerativeTokenMarketplace: NextPage<Props> = ({ token }) => {
     <>
       <Head>
         <title>fxhash — marketplace / {token.name}</title>
-        <meta key="og:title" property="og:title" content={`fxhash — marketplace / ${token.name}`}/> 
+        <meta key="og:title" property="og:title" content={`marketplace — ${token.name} — fxhash`}/> 
         <meta key="description" name="description" content={truncateEnd(token.metadata?.description || "", 200, "")}/>
         <meta key="og:description" property="og:description" content={truncateEnd(token.metadata?.description || "", 200, "")}/>
         <meta key="og:type" property="og:type" content="website"/>
         <meta key="og:image" property="og:image" content={displayUrl || "https://www.fxhash.xyz/images/og/og1.jpg"}/>
+        <meta name="twitter:site" content="@fx_hash_"/>
+        <meta name="twitter:card" content="summary_large_image"/>
+        <meta name="twitter:title" content={`marketplace — ${token.name} — fxhashcollection`}/>
+        <meta name="twitter:description" content={truncateEnd(token.metadata?.description || "", 200, "")}/>
+        <meta name="twitter:image" content={displayUrl || "https://www.fxhash.xyz/images/og/og1.jpg"}/>
       </Head>
 
-      <FlagBanner token={token}/>
+      <GenerativeFlagBanner token={token}/>
 
       <Spacing size="6x-large" />
 

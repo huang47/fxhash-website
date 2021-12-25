@@ -118,7 +118,7 @@ const ReportsPage: NextPage<Props> = ({
               ))}
             </div>
           ):(
-            <em>No tokens are avaiting for moderation.</em>
+            <em>No tokens are awaiting for moderation.</em>
           )}
 
           <Spacing size="6x-large" />
@@ -142,7 +142,7 @@ const ReportsPage: NextPage<Props> = ({
   )
 }
 
-export async function getServerSideProps() {
+export async function getStaticProps() {
   const { data } = await client.query({
     query: Qu_reportedGenTokens,
     fetchPolicy: "no-cache",
@@ -156,6 +156,7 @@ export async function getServerSideProps() {
     props: {
       tokens: data.reportedGenerativeTokens,
     },
+    revalidate: 60
   }
 }
 

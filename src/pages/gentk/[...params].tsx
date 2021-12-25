@@ -27,8 +27,8 @@ import { Features } from '../../components/Features/Features'
 import { format } from 'date-fns'
 import { displayPercentage, displayRoyalties } from '../../utils/units'
 import { Qu_objkt } from '../../queries/objkt'
-import { getGenerativeTokenUrl } from '../../utils/generative-token'
-import { FlagBanner } from '../../containers/Generative/FlagBanner'
+import { getGenerativeTokenMarketplaceUrl, getGenerativeTokenUrl } from '../../utils/generative-token'
+import { GenerativeFlagBanner } from '../../containers/Generative/FlagBanner'
 
 
 interface Props {
@@ -52,14 +52,19 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
     <>
       <Head>
         <title>fxhash — {objkt.name}</title>
-        <meta key="og:title" property="og:title" content={`fxhash — ${objkt.name}`}/> 
+        <meta key="og:title" property="og:title" content={`${objkt.name} — fxhash`}/> 
         <meta key="description" name="description" content={truncateEnd(objkt.metadata?.description || "", 200, "")}/>
         <meta key="og:description" property="og:description" content={truncateEnd(objkt.metadata?.description || "", 200, "")}/>
         <meta key="og:type" property="og:type" content="website"/>
         <meta key="og:image" property="og:image" content={displayUrl || "https://www.fxhash.xyz/images/og/og1.jpg"}/>
+        <meta name="twitter:site" content="@fx_hash_"/>
+        <meta name="twitter:card" content="summary_large_image"/>
+        <meta name="twitter:title" content={`${objkt.name} — fxhash`}/>
+        <meta name="twitter:description" content={truncateEnd(objkt.metadata?.description || "", 200, "")}/>
+        <meta name="twitter:image" content={displayUrl || "https://www.fxhash.xyz/images/og/og1.jpg"}/>
       </Head>
 
-      <FlagBanner token={objkt.issuer} />
+      <GenerativeFlagBanner token={objkt.issuer} />
 
       <Spacing size="6x-large" />
 
@@ -67,7 +72,7 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
         <div className={cs(style['presentation-details'])}>
           <header>
             <small className={cs(colors.gray)}>GENTK#{ objkt.id }</small>
-            <h3>{ objkt.name }</h3>
+            <h3>{ objkt.name }{ objkt.assigned === false && ` - ${objkt.issuer.name}`}</h3>
             <Spacing size="x-small"/>
             <UserBadge 
               prependText="created by"
@@ -96,15 +101,20 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
               {/* @ts-ignore */}
               <ClientOnlyEmpty style={{ width: "100%" }}>
                 <UserGuard forceRedirect={false}>
-                  <OfferControl objkt={objkt}/>
+                  <>
+                    <OfferControl objkt={objkt}/>
+                  </>
                 </UserGuard>
               </ClientOnlyEmpty>
 
               <Link href={getGenerativeTokenUrl(objkt.issuer)} passHref>
-                <Button
-                  isLink={true}
-                >
+                <Button isLink={true} size="small">
                   See Generative Token
+                </Button>
+              </Link>
+              <Link href={getGenerativeTokenMarketplaceUrl(objkt.issuer)} passHref>
+                <Button isLink={true} size="small">
+                  See Marketplace
                 </Button>
               </Link>
             </div>
@@ -116,7 +126,7 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
             <div className={cs(style['preview-wrapper'])}>
               <ArtworkIframe 
                 ref={iframeRef}
-                url={ipfsGatewayUrl(objkt.metadata?.artifactUri)}
+                url={ipfsGatewayUrl(objkt.metadata?.artifactUri, "pinata-fxhash-safe")}
               />
             </div>
           </div>

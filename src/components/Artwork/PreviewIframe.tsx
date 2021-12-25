@@ -9,6 +9,7 @@ import { Error } from '../Error/Error'
 interface Props {
   url?: string
   textWaiting?: string
+  borderWidth?: number
   onLoaded?: () => void
 }
 
@@ -17,13 +18,19 @@ export interface ArtworkIframeRef {
   getHtmlIframe: () => HTMLIFrameElement | null
 }
 
-export const ArtworkIframe = forwardRef<ArtworkIframeRef, Props>(({ url, textWaiting, onLoaded }, ref) => {
+export const ArtworkIframe = forwardRef<ArtworkIframeRef, Props>(({ 
+  url, 
+  textWaiting, 
+  onLoaded,
+  borderWidth = 20
+}, ref) => {
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<boolean>(false)
+  const isLoaded = useRef<boolean>(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
-    setLoading(true)
+    setLoading(!isLoaded.current)
     setError(false)
   }, [])
 
@@ -33,6 +40,17 @@ export const ArtworkIframe = forwardRef<ArtworkIframeRef, Props>(({ url, textWai
       setError(false)
       iframeRef.current.src = iframeRef.current.src
     }
+  }
+
+  useEffect(() => {
+    // when the url changes, we set reload to true
+    setLoading(true)
+  }, [url])
+
+  // set iframe state to loaded and set ref to loaded to prevent loader init to loading
+  const setIframeLoaded = () => {
+    isLoaded.current = true
+    setLoading(false)
   }
 
   const getHtmlIframe = (): HTMLIFrameElement|null => {
@@ -45,28 +63,29 @@ export const ArtworkIframe = forwardRef<ArtworkIframeRef, Props>(({ url, textWai
   }))
 
   return (
-    <div className={style.container}>
-      <div className={cs(style['iframe-container'])}>
-        <iframe 
+    <div className={style.container} style={{ borderWidth }}>
+      <div className={cs(style["iframe-container"])}>
+        <iframe
           ref={iframeRef}
           src={url}
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-same-origin"
           className={cs(style.iframe)}
           onLoad={() => {
-            onLoaded && onLoaded()
-            setLoading(false)
+            onLoaded?.()
+            setIframeLoaded()
           }}
           onError={() => setError(true)}
+          allow="accelerometer; camera; gyroscope; microphone; xr-spatial-tracking;"
         />
-        {(loading && !error) &&(
-          <LoaderBlock height="100%" className={cs(style.loader)}>{textWaiting}</LoaderBlock>
+        {loading && !error && (
+          <LoaderBlock height="100%" color="white" className={cs(style.loader)}>
+            {textWaiting}
+          </LoaderBlock>
         )}
         {error && (
-          <Error className={cs(style.error)}>
-            Could not load the project
-          </Error>
+          <Error className={cs(style.error)}>Could not load the project</Error>
         )}
       </div>
     </div>
-  )
+  );
 })

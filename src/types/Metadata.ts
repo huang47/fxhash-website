@@ -1,5 +1,5 @@
 import { Vec2 } from "./Math"
-import { CaptureMode } from "./Mint"
+import { CaptureMode, CaptureTriggerMode } from "./Mint"
 
 export interface TokenMetadata {
   "": string
@@ -19,6 +19,7 @@ export interface TokenFormat {
 
 export interface CaptureSettings {
   mode: CaptureMode
+  triggerMode: CaptureTriggerMode
   resolution?: Vec2
   delay?: number
   canvasSelector?: string
@@ -68,10 +69,15 @@ export interface GenerativeTokenMetadata {
   thumbnailUri: string
   // link to the generative URL project
   generativeUri: string
+  // an authenticity hash given by the backend
   authenticityHash: string
   capture: CaptureSettings
   decimals: number,
-  symbol: string
+  symbol: string,
+  // ADDED STARTING FROM v0.2
+  // a fake transaction hash used for the preview
+  previewHash?: string
+  version?: string
 }
 
 export interface ObjktMetadata extends GenerativeTokenMetadata {

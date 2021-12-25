@@ -36,6 +36,10 @@
     margin-top: 2em;
   }
 
+  ul ul {
+    margin-top: 0;
+  }
+
   img {
     max-width: 100%;
     margin: auto;
@@ -59,4 +63,13 @@
       border-radius: 4px;
     }
   } 
+}
+
+:global .dark :local .article {
+  p, ul {
+    code {
+      background: black;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+  }
 }

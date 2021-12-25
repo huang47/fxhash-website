@@ -1,0 +1,10 @@
+.root {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-items: center;
+  grid-gap: 5px 15px;
+
+  strong {
+    font-size: var(--font-size-small);
+  }
+}
