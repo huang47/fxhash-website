@@ -22,10 +22,10 @@ import { Offer } from '../types/entities/Offer'
 import { ObjktCard } from '../components/Card/ObjktCard'
 import nl2br from 'react-nl2br'
 import { TitleHyphen } from '../components/Layout/TitleHyphen'
-import { PerformanceTimings } from '../utils/performance'
 import { getGenerativeTokenUrl } from '../utils/generative-token'
 import { useContext } from 'react'
 import { SettingsContext } from '../context/Theme'
+import { PresentationHeader } from '../containers/Home/PresentationHeader'
 
 
 interface Props {
@@ -77,10 +77,13 @@ const Home: NextPage<Props> = ({
                 <Spacing size="x-small"/>
 
                 <div className={cs(styles['artwork-details'])}>
-                  <MintProgress
-                    balance={randomGenerativeToken.balance}
-                    supply={randomGenerativeToken.supply}
-                  />
+                  <div className={cs(styles.mint_progress)}>
+                    <MintProgress
+                      balance={randomGenerativeToken.balance}
+                      supply={randomGenerativeToken.supply}
+                      originalSupply={randomGenerativeToken.originalSupply}
+                    />
+                  </div>
 
                   <Spacing size="large"/>
 
@@ -133,6 +136,7 @@ const Home: NextPage<Props> = ({
                 key={token.id}
                 token={token}
                 displayPrice={settings.displayPricesCard}
+                displayDetails={settings.displayInfosGenerativeCard}
               />
             ))}
           </CardsContainer>
@@ -189,16 +193,16 @@ export async function getServerSideProps() {
           metadataUri
           price
           supply
+          originalSupply
           balance
           enabled
           royalties
           createdAt
-          updatedAt
           author {
             id
             name
+            flag
             avatarUri
-            description
           }
         }
         generativeTokens(skip: $skip, take: $take) {
@@ -208,14 +212,15 @@ export async function getServerSideProps() {
           metadata
           price
           supply
+          originalSupply
           balance
           enabled
           royalties
           createdAt
-          updatedAt
           author {
             id
             name
+            flag
             avatarUri
           }
         }
@@ -232,22 +237,19 @@ export async function getServerSideProps() {
               author {
                 id
                 name
-                avatarUri
-              }
-            }
-            offer {
-              id
-              price
-              issuer {
-                id
-                name
+                flag
                 avatarUri
               }
             }
             owner {
               id
               name
+              flag
               avatarUri
+            }
+            offer {
+              id
+              price
             }
           }
         }

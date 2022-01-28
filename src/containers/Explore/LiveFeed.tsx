@@ -29,11 +29,11 @@ export function LiveFeed() {
     fetchPolicy: "no-cache"
   })
 
-  // 3 piles: to be revelead, revealing, revealed
+  // 3 piles: to be revealed, revealing, revealed
   const [toReveal, setToReveal] = useState<Objkt[]>([])
   const [revealing, setRevealing] = useState<Objkt|null>(null)
   const [revealed, setRevealed] = useState<Objkt[]>([])
-  // is it ready to be replaed
+  // is it ready to be revealed
   const [readyRevealNew, setReadyRevealNew] = useState<boolean>(false)
 
   const progressRef = useRef<ProgressAnimatedRef>(null)
@@ -42,7 +42,7 @@ export function LiveFeed() {
     getObjktsFeed({
       variables: {
         "filters": {
-          "assigned_eq": "true",
+          "assigned_eq": true,
           "assignedAt_gt": lastFetch.current.toISOString()
         },
         "take": 20
@@ -181,7 +181,7 @@ export function LiveFeed() {
         </CardsContainer>
       ):(
         <em className={cs(colors['gray-dark'])}>
-          Once a token will be revelead on your screen it will appear in here...
+          Once a token will be revealed on your screen it will appear in here...
         </em>
       )}
     </div>

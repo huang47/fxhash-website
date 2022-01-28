@@ -20,9 +20,9 @@ GT on fxhash can only be written in **html/css/javascript**. Ultimately, GT are 
 
 ## 1. Upload and mint a GT
 
-First, you upload your project and mint it as a Generative Token. This project is a tiny website which sole purpose is to generate some visuals based on a 51-characters [base 58](https://en.bitcoinwiki.org/wiki/Base58) encoded number (Tezos transaction hashes have the same signature). The project needs to be designed in a way that, when the same string is given to it, it **always produces the same output**. However, a different string should produce a **different output**.
+First, you upload your project and mint it as a Generative Token. This project is a tiny website which sole purpose is to generate some visual/audio based on a 51-characters [base 58](https://en.bitcoinwiki.org/wiki/Base58) encoded number (Tezos transaction hashes have the same signature). The project needs to be designed in a way that, when the same string is given to it, it **always produces the same output**. However, a different string should produce a **different output**.
 
-![Generative Token overview](/images/articles/overview.jpg)
+![Generative Token overview](/images/articles/guide-mint/overview.jpg)
 
 ## 2. Your project is stored
 
@@ -30,9 +30,9 @@ Your project will be stored on the [IPFS](https://ipfs.io/) network, and then st
 
 ## 3. People mint a unique token from your GT
 
-When a GT is successfully minted on the platform, anyone will be able to mint a unique token from it. When such an event arises, the hash of the transaction is injected into a new instance of your project. Then, this new *website* is uploaded to IPFS, and is assigned to the metadata of the new Token. This process ensures that each token minted from your GT will be independent, self-contained and immutable. Anyone will get a unique link to a website stored on IPFS.
+When a GT is published on the platform, anyone will be able to mint unique iterations from it. When such an event arises, the mint transaction generates a unique hash. The hash is sent as a URL parameter to your project. A [code snippet](#fxhash-code-snippet) is used to get this hash from the URL so that it can be used in your code.
 
-![Mint overview](/images/articles/mint-desc.jpg)
+![Mint overview](/images/articles/guide-collect/guide-mint.jpg)
 
 ## 4. Image preview
 
@@ -82,6 +82,9 @@ fxhash requires you to insert the following code snippet in the `<head>` section
     }
   }
   var fxrand = sfc32(...hashes)
+  // true if preview mode active, false otherwise
+  // you can append preview=1 to the URL to simulate preview active
+  var isFxpreview = new URLSearchParams(window.location.search).get('preview') === "1"
   // call this method to trigger the preview
   function fxpreview() {
     console.log("fxhash: TRIGGER PREVIEW")
@@ -95,10 +98,12 @@ This snippet serves 2 purposes:
 - some parts of it will be replaced by fxhash to generate unique tokens from your GT (a static hash will be inserted instead of the random generation)
 - during the development stages, it emulates eventual hashes your program could get as an input. Every time you refresh the page, it generates a random hash. This way, you can really build your GT properly before deploying it.
 
-The code snippet exposes 2 variables:
+The code snippet exposes 4 variables:
 
 - `fxhash`: a random 51 characters base 58 encoded string (designed to have the same signature has a Tezos transaction hash). When someone mints a unique Token from a Generative Token, the transaction hash is hardcoded in place of the code that generates a random one.
 - `fxrand()`: a PRNG function that generates deterministic PRN between 0 and 1. **Simply use it instead of Math.random()**.
+- `fxpreview()`: a function you can call whenever the code is ready to be captured
+- `isFxpreview`: a boolean, true when the code is executed to take the capture, false otherwise
 
 **Those 2 variable/function will be globally accessible by your program, and must be used to drive any random process required by your piece**.
 
@@ -204,7 +209,7 @@ This step will define the strategy the capture module should use to generate the
 The trigger defines when the capture module will take the preview after loading the token in a web browser:
 
 * **Fixed delay**: Give it a delay of X seconds, and once the project is loaded, the capture module will wait X seconds before triggering the capture
-* **fxpreview()**: The capture module will wait until your code calls `fxpreview()`. As soon as the function is called, the capture will be triggered. You can call this function whenever your algorithm is ready to be captured. *The capture module will automatically take a capture if 40 seconds have passed after your project was loaded in the browser.*
+* **fxpreview()**: The capture module will wait until your code calls `fxpreview()`. As soon as the function is called, the capture will be triggered. You can call this function whenever your algorithm is ready to be captured. *The capture module will automatically take a capture if 300 seconds have passed after your project was loaded in the browser.*
 
 ### Target
 
@@ -213,6 +218,21 @@ This option defines what will be targetted by the capture module.
 * **From \<canvas\>**: capture module will directly grab the data of the canvas selected in the document with the CSS selector you provide. The preview will have the same size as the canvas.
 * **Viewport capture**: the capture will be made on the whole viewport, set at the resolution you will provide.
 * ~~**Custom function**~~ (not available yet): implement a custom function to provide the image directly from your code.
+
+### GPU-enabled rendering
+
+There are 2 types of rendering instances to generate previews of tokens:
+
+* **CPU only**: those are the default, and most scalable instances. They rely on a CPU fallback implementation for WebGL. They are suited for the majority of the projects
+* **GPU-enabled**: those are instances with a GPU. They can render with a GPU, but they are way slower to bootstrap and so the time it takes to generate a capture is longer because of the bootstrap time.
+
+For most of the cases, even if your project uses WebGL, CPU instances are better because we can scale an inifnite amount of instances, and so it doesn't bloat the rendering queue. However, in some cases, your project may need a GPU to render properly. **For now, we only have 4 instances available, and as a result the metadata assignation will be slower for projects using those GPU-enabled instances**.
+
+You should **only use GPU-enabled instances** if:
+
+* Your project doesn't render properly using regular instances
+
+If you don't use WebGL and only the regular canvas API, it's also possible that your project doesn't render properly on the CPU instance because the canvas API uses GPU acceleration. If you observe differences between the capture and your live version, then try using GPU-enabled rendering.
 
 
 ## Configure extra settings
@@ -255,7 +275,55 @@ Your program must use pseudorandom number generation with a seed, where the seed
 
 - the ZIP file must be **under 15 Mo**. Please try to optimize your projects as much as possible.
 
+# Best practices and common mistakes
 
+*A list of best practices and common mistakes (and how to fix them) to ensure that your token has as long a life as possible.*
+
+## Test often
+
+This section comes first as it's the most important in ensuring that your token is as good as you can make it. Remember that once you release, you can't edit the token, so make sure to test as often as you can when developing.
+
+Testing often will also allow you to catch problems early that would become big issues later on. Nobody likes to get to the minting stage - or worse, selling out - only to discover that their token doesn't work properly.
+## Resolutions and DPRs
+
+*Ensure your token looks the same in all resolutions and DPRs.*
+
+It is ideal if your token produces the same artwork at different sizes. Make sure to test your token often at different resolutions and DPRs. One of the most common pitfalls that artists fall into is not doing so and having their tokens look different at different sizes - as well as different to the preview - as a result.
+
+There are a number of different ways of getting your token to work in a resolution independent manor. Jump into the creator-support channel if you'd like to ask any questions.
+
+## WebGL
+
+WebGL is a big subject and there are a number of items worth talking about in relation to it.
+
+### Power of two textures and framebuffers
+
+Some GPUs allow you to specify non power of two textures and framebuffers, however using non power of two textures and framebuffers will break the preview system.
+
+### WebGL on different silicone
+
+WebGL is an emulation layer on top of different graphics APIs which talk to hardware, as such implementation of basic things like sine calculation and float precision can vary.
+
+One important thing to remember about WebGL is that you should be doing as muchof your calculation up-front, in javascript, and providing those values to WebGL as uniforms.
+
+### WebGL and previews
+
+As of right now the preview system doesn't have a GPU. As such, rendering your scene falls to the CPU, which will render WebGL but at an extremely low framerate.
+
+If your token is WebGL then you want to make sure that you're rendering an accepable preview in the first couple of frames.
+
+## Computational complexity and previews
+
+If your token is computationally expensive, then it's possible that the preview system will stumble over it and the signer will not be able to sign mints! Please be aware that there exist ways to generate less complex previews for your tokens, but the implementation of this necessarily needs to fall on you, the artist. Jump into the creator-support channel if you'd like to ask any questions.
+
+## Test often
+
+This is such an important point that it bears mentioning twice.
+
+- Test often
+- Test in many different environments
+- Test using the same hash at different resolutions
+- Test in the sandbox as well as standalone
 # 3 ways to start a project
 
 *This section will provide you with some boilerplate projects to make the development on your GT easier.*

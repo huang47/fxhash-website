@@ -38,7 +38,7 @@ export function Tab({ definition, layout, active, wrapperComponent, onClick }: T
   )
 }
 
-interface Props {
+export interface Props {
   tabsLayout?: TabsLayout
   tabDefinitions: TabDefinition[]
   activeIdx: number
@@ -64,7 +64,7 @@ export function Tabs({
   children
 }: PropsWithChildren<Props>) {
   return (
-    <div className={cs(style.container)}>
+    <div className={cs(style.container, style[`layout-${tabsLayout}`])}>
       <nav className={cs(tabsClassName)}>
         {tabDefinitions.map((def, idx) => (
           <Tab 

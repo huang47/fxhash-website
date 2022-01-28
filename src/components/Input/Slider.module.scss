@@ -43,6 +43,11 @@
 
 .text {
   font-weight: bold;
-  width: 95px;
+  width: 105px;
   font-size: var(--font-size-h5);
+}
+
+.input_text {
+  flex-grow: 0 !important;
+  width: 80px;
 }

@@ -11,7 +11,6 @@ export const Qu_user = gql`
       description
       avatarUri
       createdAt
-      updatedAt
     }
   }
 `
@@ -24,12 +23,14 @@ export const Qu_userGenTokens = gql`
         id
         price
         supply
+        originalSupply
         balance
         name
         metadata
         author {
           id
           name
+          flag
           metadataUri
           avatarUri
         }
@@ -39,16 +40,18 @@ export const Qu_userGenTokens = gql`
 `
 
 export const Qu_userObjkts = gql`
-  query Query($id: String!, $take: Int, $skip: Int) {
+  query Query($id: String!, $take: Int, $skip: Int, $sort: UserCollectionSortInput, $filters: ObjktFilter) {
     user(id: $id) {
       id
-      objkts(take: $take, skip: $skip) {
+      objkts(take: $take, skip: $skip, sort: $sort, filters: $filters) {
         id
         assigned
+        rarity
         iteration
         owner {
           id
           name
+          flag
           avatarUri
         }
         issuer {
@@ -57,22 +60,35 @@ export const Qu_userObjkts = gql`
           author {
             id
             name
+            flag
             avatarUri
           }
         }
         name
         metadata
         createdAt
-        updatedAt
         offer {
           id
           price
-          issuer {
-            id
-            name
-            avatarUri
-          }
         }
+      }
+    }
+  }
+`
+
+export const Qu_userObjktsSubResults = gql`
+  query Query($id: String!, $generativeFilters: ObjktFilter, $authorFilters: ObjktFilter) {
+    user(id: $id) {
+      generativeTokensFromObjktFilters(filters: $generativeFilters) {
+        id
+        name
+        metadata
+      } 
+      authorsFromObjktFilters(filters: $authorFilters) {
+        id
+        name
+        avatarUri
+        flag
       }
     }
   }
@@ -90,29 +106,24 @@ export const Qu_userOffers = gql`
           id
           name
           metadata
-          createdAt
+          owner {
+            id
+            name
+            flag
+            avatarUri
+          }
+          offer {
+            price
+          }
           issuer {
             flag
             author {
               id
               name
+              flag
               avatarUri
             }
           }
-          offer {
-            price
-            issuer {
-              id
-              name
-              avatarUri
-            }
-          }
-        }
-        createdAt
-        issuer {
-          id
-          name
-          avatarUri
         }
       }
     }
@@ -131,11 +142,13 @@ export const Qu_userActions = gql`
         issuer {
           id
           name
+          flag
           avatarUri
         }
         target {
           id
           name
+          flag
           avatarUri
         }
         token {

@@ -1,5 +1,6 @@
 import style from "./StepInformations.module.scss"
 import layout from "../../styles/Layout.module.scss"
+import colors from "../../styles/Colors.module.css"
 import cs from "classnames"
 import { StepComponent } from "../../types/Steps"
 import { useContext, useEffect, useState } from "react"
@@ -25,6 +26,7 @@ import { MintGenerativeCallData } from "../../types/ContractCalls"
 import { ContractFeedback } from "../../components/Feedback/ContractFeedback"
 import { getMutezDecimalsNb, isPositive } from "../../utils/math"
 import { tagsFromString } from "../../utils/strings"
+import { stringToByteString } from "../../utils/convert"
 
 
 const initialForm: Partial<GenTokenInformationsForm> = {
@@ -108,6 +110,7 @@ export const StepInformations: StepComponent = ({ state, onNext }) => {
     const capture: CaptureSettings = {
       mode: state.captureSettings!.mode!,
       triggerMode: state.captureSettings!.triggerMode!,
+      gpu: state.captureSettings!.gpu,
     }
     // set settings based on the capture mode
     if (state.captureSettings!.mode === CaptureMode.VIEWPORT) {
@@ -162,12 +165,9 @@ export const StepInformations: StepComponent = ({ state, onNext }) => {
       call({
         amount: savedInfos.editions!,
         enabled: savedInfos.enabled!,
-        metadata: {
-          "": getIpfsSlash(metadataCid)
-        },
+        metadata: stringToByteString(getIpfsSlash(metadataCid)),
         price: Math.floor(savedInfos.price! * 1000000),
         royalties: Math.floor(savedInfos.royalties! * 10),
-        token_name: savedInfos.name!
       })
     }
   }, [safeMetaData])
@@ -279,6 +279,10 @@ export const StepInformations: StepComponent = ({ state, onNext }) => {
                   Can be collected now
                 </Checkbox>
               </Field>
+              <em className={cs(colors.gray)}>
+                We suggest disabling the Generative Token first, and then check if it was minted properly (and only enable it if that's the case)
+              </em>
+              <Spacing size="regular"/>
 
               <Field error={errors.price}>
                 <label htmlFor="price">

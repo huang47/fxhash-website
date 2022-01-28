@@ -285,7 +285,7 @@ export function useEventSource<T, P = string, E = string>(
         source.close()
       }
     }
-  }, [counter])
+  }, [counter, url])
 
   return {
     progress,
@@ -329,7 +329,7 @@ export function useTzProfileVerification(address: string) {
       variables: null,
       operationName: 'MyQuery',
     })
-  }, [])
+  }, [address])
 
   const tzProfileData = useMemo(() => (!!data?.data?.tzprofiles_by_pk?.valid_claims 
     && processTzProfile(data?.data?.tzprofiles_by_pk?.valid_claims)) || null, [data])

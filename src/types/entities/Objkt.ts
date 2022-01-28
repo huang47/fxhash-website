@@ -17,12 +17,32 @@ export interface Objkt {
   slug?: string
   metadata?: ObjktMetadata
   features?: TokenFeature[] | null
-  rarity?: number
+  rarity?: number|null
   metadataUri: string
   royalties: number
-  offer?: Offer
+  offer?: Offer|null
   actions: Action[]
   createdAt: string
   updatedAt: string
   assignedAt: string|null
+}
+
+export enum EObjktFeatureType {
+  BOOLEAN              = "BOOLEAN",
+  STRING               = "STRING",
+  NUMBER               = "NUMBER",
+}
+
+export interface IObjktFeatureFilter {
+  name: string
+  values: string[]
+  type: EObjktFeatureType
+}
+
+export function objktFeatureType(value: any): EObjktFeatureType {
+  const type = typeof value
+  if (type === "boolean") return EObjktFeatureType.BOOLEAN
+  else if (type === "number") return EObjktFeatureType.NUMBER
+  else return EObjktFeatureType.STRING
+  
 }

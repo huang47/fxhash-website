@@ -12,64 +12,15 @@ export const Qu_genToken = gql`
       metadataUri
       price
       supply
+      originalSupply
       balance
       enabled
       royalties
-      objkts: latestObjkts {
-        id
-        owner {
-          id
-          name
-          avatarUri
-        }
-        name
-        slug
-        metadata
-        offer {
-          issuer {
-            id
-            name
-            avatarUri
-          }
-          price
-        }
-        issuer {
-          flag
-          author {
-            id
-            name
-            avatarUri
-          }
-        }
-      }
+      lockEnd
       createdAt
-      updatedAt
-      actions: latestActions {
-        id
-        type
-        metadata
-        createdAt
-        issuer {
-          id
-          name
-          avatarUri
-        }
-        target {
-          id
-          name
-          avatarUri
-        }
-        objkt {
-          id
-          name
-        }
-        token {
-          id
-          name
-        }
-      }
       author {
         id
+        flag
         name
         avatarUri
       }
@@ -89,22 +40,39 @@ export const Qu_genTokenMarketplace = gql`
       metadataUri
       price
       supply
+      originalSupply
       balance
       enabled
       royalties
+      lockEnd
+      author {
+        id
+        name
+        avatarUri
+      }
       marketStats {
         floor
         median
         highestSold
         lowestSold
-        totalListing
-        primTotal
+        listed
+        primVolumeTz
+        primVolumeTz
         secVolumeTz
         secVolumeNb
         secVolumeTz24
         secVolumeNb24
       }
-      objkts: latestObjkts {
+      createdAt
+    }
+  }
+`
+
+export const Qu_genTokenIterations = gql`
+  query GenerativeTokenIterations($id: Float, $take: Int, $skip: Int, $sort: ObjktsSortInput, $featureFilters: [FeatureFilter!]) {
+    generativeToken(id: $id) {
+      id
+      objkts(take: $take, skip: $skip, sort: $sort, featureFilters: $featureFilters) {
         id
         owner {
           id
@@ -112,56 +80,20 @@ export const Qu_genTokenMarketplace = gql`
           avatarUri
         }
         name
-        slug
         metadata
+        rarity
         offer {
-          issuer {
-            id
-            name
-            avatarUri
-          }
           price
         }
-        issuer {
-          flag
-          author {
-            id
-            name
-            avatarUri
-          }
-        }
       }
-      createdAt
-      updatedAt
-      actions: latestActions {
-        id
-        type
-        metadata
-        createdAt
-        issuer {
-          id
-          name
-          avatarUri
-        }
-        target {
-          id
-          name
-          avatarUri
-        }
-        objkt {
-          id
-          name
-        }
-        token {
-          id
-          name
-        }
-      }
-      author {
-        id
-        name
-        avatarUri
-      }
+    }
+  }
+`
+
+export const Qu_genTokenFeatures = gql`
+  query GenerativeTokenFeatures($id: Float) {
+    generativeToken(id: $id) {
+      features
     }
   }
 `
@@ -187,13 +119,29 @@ export const Qu_genTokenObjkts = gql`
         name
         metadata
         offer {
-          issuer {
-            id
-            name
-            avatarUri
-          }
           price
         }
+      }
+    }
+  }
+`
+
+export const Qu_genTokenMarketHistory = gql`
+  query GenerativeTokenMarketHistory($id: Float, $filters: MarketStatsHistoryInput!) {
+    generativeToken(id: $id) {
+      id,
+      marketStatsHistory(filters: $filters) {
+        floor
+        median
+        from
+        to
+        listed
+        highestSold
+        lowestSold
+        primVolumeTz
+        primVolumeNb
+        secVolumeTz
+        secVolumeNb
       }
     }
   }

@@ -7,10 +7,8 @@ import ClientOnly from '../components/Utils/ClientOnly'
 import { ExploreGenerativeTokens } from '../containers/ExploreGenerativeTokens'
 import Head from 'next/head'
 import { TitleHyphen } from '../components/Layout/TitleHyphen'
-import { Tabs } from '../components/Layout/Tabs'
 import { ExploreTabs } from '../containers/Explore/ExploreTabs'
-
-
+import { SectionTitle } from '../components/Layout/SectionTitle'
 
 const Explore: NextPage = () => {
   return (
@@ -23,24 +21,21 @@ const Explore: NextPage = () => {
         <meta key="og:type" property="og:type" content="website"/>
         <meta key="og:image" property="og:image" content="https://www.fxhash.xyz/images/og/og1.jpg"/>
       </Head>
-      <Spacing size="6x-large" />
+
+      <Spacing size="3x-large" />
 
       <section>
-        <SectionHeader>
-          <TitleHyphen>explore / artists' work</TitleHyphen>
+        <SectionHeader layout="center">
+          <SectionTitle>explore generators</SectionTitle>
         </SectionHeader>
 
-        <Spacing size="x-large" />
+        <Spacing size="3x-large" />
 
         <ExploreTabs active={0} />
 
-        <Spacing size="x-large"/>
-
-        <main className={cs(layout['padding-big'])}>
-          <ClientOnly>
-            <ExploreGenerativeTokens />
-          </ClientOnly>
-        </main>
+        <ClientOnly>
+          <ExploreGenerativeTokens />
+        </ClientOnly>
       </section>
 
       <Spacing size="6x-large" />

@@ -30,15 +30,15 @@ const Qu_genTokens = gql`
       enabled
       royalties
       createdAt
-      updatedAt
       author {
         id
         name
+        flag
         avatarUri
       }
       marketStats {
         floor
-        totalListing
+        listed
       }
     }
   }
@@ -57,15 +57,15 @@ const Qu_tokensById = gql`
       enabled
       royalties
       createdAt
-      updatedAt
       author {
         id
         name
+        flag
         avatarUri
       }
       marketStats {
         floor
-        totalListing
+        listed
       }
     }
   }

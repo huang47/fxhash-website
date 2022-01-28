@@ -4,6 +4,7 @@ import { GetServerSideProps, NextPage } from "next"
 import layout from "../../styles/Layout.module.scss"
 import style from "../../styles/GenerativeTokenDetails.module.scss"
 import colors from "../../styles/Colors.module.css"
+import text from "../../styles/Text.module.css"
 import homeStyle from "../../styles/Home.module.scss"
 import cs from "classnames"
 import client from "../../services/ApolloClient"
@@ -29,12 +30,22 @@ import { Qu_genToken } from '../../queries/generative-token'
 import { GenerativeActions } from '../../containers/Generative/Actions'
 import { GenerativeExtraActions } from '../../containers/Generative/ExtraActions'
 import { GenerativeFlagBanner } from '../../containers/Generative/FlagBanner'
-import { Unlock } from '../../components/Utils/Unlock'
 import { format } from 'date-fns'
 import { getGenerativeTokenMarketplaceUrl } from '../../utils/generative-token'
-import { generateFxHash } from '../../utils/hash'
 import { ButtonVariations } from '../../components/Button/ButtonVariations'
+import { MintButton } from '../../components/Button/MintButton'
+import { TabDefinition, Tabs } from '../../components/Layout/Tabs'
+import { GenerativeIterations } from '../../containers/Generative/Iterations/GenerativeIterations'
 
+
+const tabs: TabDefinition[] = [
+  {
+    name: "iterations"
+  },
+  {
+    name: "activity"
+  },
+]
 
 interface Props {
   token: GenerativeToken
@@ -48,11 +59,8 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
   // used to preview the token in the iframe with different hashes
   const [previewHash, setPreviewHash] = useState<string|null>(token.metadata.previewHash || null)
 
-  const [mintLocked, setMintLocked] = useState<boolean>(
-    (token.flag === GenTokFlag.CLEAN || (token.supply-token.balance) === 0) 
-      ? false 
-      : Date.now() - (new Date(token.createdAt)).getTime() < 1*3600*1000
-  )
+  // bottom tab active
+  const [tabActive, setTabActive] = useState<number>(0)
 
   const reload = () => {
     if (iframeRef.current) {
@@ -75,6 +83,12 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
     }
   }, [previewHash])
 
+  // will be called if the token is successfully minted
+  const onReveal = (transactionHash: string) => {
+    console.log("minted")
+    console.log(transactionHash)
+  }
+
   return (
     <>
       <Head>
@@ -93,198 +107,167 @@ const GenerativeTokenDetails: NextPage<Props> = ({ token }) => {
 
       <GenerativeFlagBanner token={token}/>
 
-      <Spacing size="6x-large" />
+      <Spacing size="3x-large" />
 
-      <section className={cs(style.presentation, layout.cols2, layout['responsive-reverse'], layout['padding-big'])}>
-        <div className={cs(style['presentation-details'])}>
-          <header style={{ position: "relative" }}>
-            <small className={cs(colors.gray)}>#{ token.id }</small>
-            <h3>{ token.name }</h3>
-            <Spacing size="x-small"/>
-            <UserBadge 
-              user={token.author}
-              size="big"
-            />
+      <section className={cs(layout['padding-big'])}>
+        <div className={cs(style.artwork_header_mobile, layout.break_words)}>
+          <UserBadge 
+            user={token.author}
+            size="regular"
+          />
+          <Spacing size="2x-small"/>
+          <h3>{ token.name }</h3>
+          <Spacing size="x-large"/>
+        </div>
+
+        <div className={cs(style.presentation, layout.cols2, layout['responsive-reverse'])}>
+          <div className={cs(style['presentation-details'])}>
+            <div className={cs(style.artwork_header)}>
+              <UserBadge 
+                user={token.author}
+                size="big"
+              />
+              <Spacing size="x-large"/>
+              <h3>{ token.name }</h3>
+            </div>
+
+            <Spacing size="x-large"/>
+
             <ClientOnly>
               <UserGuard forceRedirect={false}>
                 <EditTokenSnippet token={token} />
               </UserGuard>
             </ClientOnly>
 
-            <ClientOnly>
-              <UserGuard forceRedirect={false}>
-                <GenerativeExtraActions token={token} />
-              </UserGuard>
-            </ClientOnly>
-          </header>
+            <div className={cs(style['artwork-details'])}>
+              <MintProgress
+                balance={token.balance}
+                supply={token.supply}
+                originalSupply={token.originalSupply}
+              />
+            </div>
 
-          <Spacing size="large"/>
+            <Spacing size="x-large"/>
 
-          <p>{ nl2br(token.metadata?.description) }</p>
+            <div className={cs(layout.buttons_inline)}>
+              <MintButton
+                token={token}
+                onReveal={onReveal}
+              >
+                <Link href={getGenerativeTokenMarketplaceUrl(token)} passHref>
+                  <Button isLink={true} size="regular">
+                    open marketplace 
+                  </Button>
+                </Link>
+              </MintButton>
+            </div>
 
-          <Spacing size="2x-large"/>
+            <Spacing size="4x-large"/>
 
-          <div className={cs(style['artwork-details'])}>
-            <MintProgress
-              balance={token.balance}
-              supply={token.supply}
-            />
+            <div className={cs(style.buttons)}>
+              <div className={cs(layout.buttons_inline)}>
+                <strong>Project #{token.id}</strong>
+                <ClientOnly>
+                  <UserGuard forceRedirect={false}>
+                    <GenerativeExtraActions token={token} />
+                  </UserGuard>
+                </ClientOnly>
+              </div>
+              <strong>Minted on { format(new Date(token.createdAt), "dd/MM/yyyy' at 'HH:mm") }</strong>
+            </div>
+
             <Spacing size="large"/>
 
-            {mintLocked && (
-              <strong>Token mint is locked because the token was posted less than an hour ago. If you still want to mint, please verify if the author is legit.</strong>
-            )}
-            <Spacing size="2x-small"/>
-            
-            {!([GenTokFlag.MALICIOUS, GenTokFlag.HIDDEN].includes(token.flag)) && token.balance > 0 && (
-              <>
-                {!token.enabled && <small>token is currently <strong>disabled</strong> by author</small>}
-                <div className={cs(style.lock_container)}>
-                  <Link href={`/mint/${token.id}`} passHref>
-                    <Button
-                      isLink
-                      color="secondary"
-                      disabled={!token.enabled || mintLocked}
-                    >
-                      Mint unique token — {displayMutez(token.price)} tez
-                    </Button>
-                  </Link>
+            <p>{ nl2br(token.metadata?.description) }</p>
 
-                  {mintLocked && (
-                    <Unlock
-                      locked={true}
-                      onClick={() => setMintLocked(false)}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+            <Spacing size="2x-large"/>
 
-        <div className={cs(style['presentation-artwork'])}>
-          {/* <ArtworkPreview ipfsUri={token.metadata?.displayUri} /> */}
-          <div className={cs(style['preview-container-auto'])}>
-            <div className={cs(style['preview-wrapper'])}>
-              <ArtworkIframe 
-                ref={iframeRef}
-                url={artifactUrl}
-              />
+            <div className={cs(style.buttons, layout.break_words)}>
+              <span><strong>Price:</strong> { displayMutez(token.price) } tez</span>
+              <span><strong>Royalties:</strong> { displayRoyalties(token.royalties) }</span>
+              <span><strong>Tags:</strong> { token.tags?.join(", ") || "/" }</span>
+              <span>
+                <strong>Metadata: </strong>
+                <a 
+                  target="_blank"
+                  referrerPolicy="no-referrer"
+                  href={ipfsGatewayUrl(token.metadataUri)}
+                >
+                  view on IPFS <i className="fas fa-external-link-square" aria-hidden/>
+                </a>
+              </span>
             </div>
           </div>
 
-          <Spacing size="8px"/>
+          <div className={cs(style['presentation-artwork'])}>
+            {/* <ArtworkPreview ipfsUri={token.metadata?.displayUri} /> */}
+            <div className={cs(style['preview-container-auto'])}>
+              <div className={cs(style['preview-wrapper'])}>
+                <ArtworkIframe 
+                  ref={iframeRef}
+                  url={artifactUrl}
+                />
+              </div>
+            </div>
 
-          <div className={cs(layout['x-inline'])}>
-            <ButtonVariations
-              token={token}
-              previewHash={previewHash}
-              onChangeHash={setPreviewHash}
-            />
-            <Button
-              size="small"
-              iconComp={<i aria-hidden className="fas fa-redo"/>}
-              iconSide="right"
-              onClick={reload}
-            >
-              reload
-            </Button>
-            <Link href={ipfsGatewayUrl(token.metadata?.artifactUri)} passHref>
+            <Spacing size="8px"/>
+
+            <div className={cs(layout['x-inline'], style.artwork_buttons)}>
+              <ButtonVariations
+                token={token}
+                previewHash={previewHash}
+                onChangeHash={setPreviewHash}
+              />
               <Button
-                isLink={true}
                 size="small"
-                iconComp={<i aria-hidden className="fas fa-external-link-alt"></i>}
-                // @ts-ignore
-                target="_blank"
+                color="transparent"
+                iconComp={<i aria-hidden className="fas fa-redo"/>}
+                iconSide="right"
+                onClick={reload}
               >
-                open live
+                reload
               </Button>
-            </Link>
+              <Link href={artifactUrl} passHref>
+                <Button
+                  isLink={true}
+                  size="small"
+                  color="transparent"
+                  iconComp={<i aria-hidden className="fas fa-external-link-square"/>}
+                  // @ts-ignore
+                  target="_blank"
+                  iconSide="right"
+                >
+                  open live
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       <Spacing size="6x-large" />
-
-      <section>
-        <SectionHeader>
-          <TitleHyphen>details</TitleHyphen>
-        </SectionHeader>
-        
-        <main className={cs(layout['padding-big'], layout.break_words)}>
-          <Spacing size="small" />
-          <div className={cs(style.buttons)}>
-            <span><strong>Minted the:</strong> { format(new Date(token.createdAt), "dd/MM/yyyy' at 'HH:mm") }</span>
-            <span><strong>Price:</strong> { displayMutez(token.price) } tez</span>
-            <span><strong>Royalties:</strong> { displayRoyalties(token.royalties) }</span>
-            <span><strong>Tags:</strong> { token.tags?.join(", ") || "/" }</span>
-            <span><strong>Metadata:</strong> <a href={ipfsGatewayUrl(token.metadataUri)} target="_blank" referrerPolicy="no-referrer">{token.metadataUri}</a></span>
-            <Spacing size="3x-small" />
-            <Link href={getGenerativeTokenMarketplaceUrl(token)} passHref>
-              <Button isLink={true} size="small">
-                See marketplace page 
-              </Button>
-            </Link>
-          </div>
-        </main>
-      </section>
-
       <Spacing size="6x-large" />
-      <Spacing size="6x-large" />
+      
+      <Tabs
+        activeIdx={tabActive}
+        tabDefinitions={tabs}
+        tabsLayout="fixed-size"
+        onClickTab={setTabActive}
+      />
 
-      <section>
-        <SectionHeader>
-          <TitleHyphen>latest tokens minted</TitleHyphen>
-          {hasCollection && (
-            <Link href={collectionUrl}>
-              <a>view entire collection &gt;</a>
-            </Link>
-          )}
-        </SectionHeader>
-
-        <Spacing size="3x-large"/>
-
+      {tabActive === 0 ? (
+        <GenerativeIterations
+          token={token}
+        />
+      ):(
         <main className={cs(layout['padding-big'])}>
-          {hasCollection ? (
-            <>
-              <CardsContainer className={cs(homeStyle['row-responsive-limiter'])}>
-                {token.objkts.slice(0, 5).map(objkt => (
-                  <ObjktCard key={objkt.id} objkt={objkt}/>
-                ))}
-              </CardsContainer>
-              <Spacing size="4x-large"/>
-              <div className={cs(style['view-collection-container'])}>
-                <Link href={collectionUrl} passHref>
-                  <Button isLink={true}>view entire collection</Button>
-                </Link>
-              </div>
-            </>
-          ):(
-            <>
-              <p>Nobody has minted from this Generative Token. <strong>Become the first of the collection !</strong></p>
-            </>
-          )}
-        </main>
-      </section>
-
-      <Spacing size="6x-large" />
-      <Spacing size="6x-large" />
-
-      <section>
-        <SectionHeader>
-          <h2>— activity ⚡</h2>
-        </SectionHeader>
-
-        <Spacing size="3x-large"/>
-
-        <main className={cs(layout['padding-big'])}>
+          <Spacing size="x-large"/>
           <GenerativeActions
             token={token}
-            initialActions={token.actions}
             className={style.activity}
           /> 
         </main>
-      </section>
+      )}
 
       <Spacing size="6x-large" />
       <Spacing size="6x-large" />

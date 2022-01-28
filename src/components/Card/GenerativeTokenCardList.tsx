@@ -2,10 +2,8 @@ import style from "./GenerativeTokenCardList.module.scss"
 import cs from "classnames"
 import Link from "next/link"
 import { GenerativeToken } from "../../types/entities/GenerativeToken"
-import text from "../../styles/Text.module.css"
 import { AnchorForward } from "../Utils/AnchorForward"
 import { UserBadge } from "../User/UserBadge"
-import { MintProgress } from "../Artwork/MintProgress"
 import { Spacing } from "../Layout/Spacing"
 import { getGenerativeTokenUrl } from "../../utils/generative-token"
 import { CardList } from "./CardList"
@@ -40,7 +38,7 @@ export function GenerativeTokenCardList({
             </div>
             <div className={cs(style.metric)}>
               <span>For sale</span>
-              <strong>{ token.marketStats?.totalListing || "0" }</strong>
+              <strong>{ token.marketStats?.listed || "0" }</strong>
             </div>
             <div className={cs(style.metric, style.progress)}>
               <span>Minted</span>

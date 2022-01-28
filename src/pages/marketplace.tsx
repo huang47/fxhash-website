@@ -9,6 +9,8 @@ import { Marketplace } from '../containers/Marketplace'
 import Head from 'next/head'
 import { TitleHyphen } from '../components/Layout/TitleHyphen'
 import { MarketplaceTabs } from '../containers/Marketplace/Tabs'
+import { CollectionRanks } from '../containers/Stats/Ranks/CollectionRanks'
+import { HeaderRanks } from '../components/Stats/HeaderRanks'
 
 
 
@@ -24,24 +26,20 @@ const MarketplacePage: NextPage = () => {
         <meta key="og:image" property="og:image" content="https://www.fxhash.xyz/images/og/og1.jpg"/>
       </Head>
 
+      <Spacing size="3x-large" />
+      
+      <HeaderRanks>
+        <CollectionRanks/>
+      </HeaderRanks>
+      
       <Spacing size="6x-large" />
 
       <section>
-        <SectionHeader>
-          <TitleHyphen>marketplace / explore</TitleHyphen>
-        </SectionHeader>
-
-        <Spacing size="x-large" />
-
         <MarketplaceTabs active={0} />
 
-        <Spacing size="x-large"/>
-
-        <main className={cs(layout['padding-big'])}>
-          <ClientOnlyEmpty>
-            <Marketplace />
-          </ClientOnlyEmpty>
-        </main>
+        <ClientOnlyEmpty>
+          <Marketplace />
+        </ClientOnlyEmpty>
       </section>
 
       <Spacing size="6x-large" />

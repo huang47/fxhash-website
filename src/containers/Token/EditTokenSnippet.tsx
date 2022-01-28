@@ -7,6 +7,7 @@ import { Button } from "../../components/Button"
 import { useContext } from "react"
 import { UserContext } from "../UserProvider"
 import { BurnToken } from "./BurnToken"
+import { Spacing } from "../../components/Layout/Spacing"
 
 
 interface Props {
@@ -41,7 +42,7 @@ export function EditTokenSnippet({ token }: Props) {
         </span>
       </div>
 
-      <BurnToken token={token} />
+      <Spacing size="large"/>
     </>
   ):null
 }

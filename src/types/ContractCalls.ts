@@ -8,21 +8,9 @@ export interface ProfileUpdateCallData {
 export interface MintGenerativeCallData {
   amount: number,
   enabled: boolean,
-  metadata: {
-    "": string
-  },
+  metadata: string,
   price: number,
   royalties: number,
-  token_name: string
-}
-
-export interface MintGenerativeRawCall {
-  amount: number,
-  enabled: boolean,
-  metadata: MichelsonMap<string, string>
-  price: number,
-  royalties: number,
-  token_name: string
 }
 
 export interface UpdateGenerativeCallData {
@@ -32,8 +20,12 @@ export interface UpdateGenerativeCallData {
   issuer_id: number
 }
 
+export interface BurnSupplyCallData {
+  amount: number
+  issuer_id: number
+}
+
 export interface MintCall {
-  issuer_address: string,
   issuer_id: number,
   price: number
 }
@@ -61,5 +53,10 @@ export interface ReportCall {
 
 export interface ModerateCall {
   tokenId: number
+  state: number
+}
+
+export interface ModerateUserStateCall {
+  address: string
   state: number
 }

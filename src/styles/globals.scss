@@ -17,6 +17,7 @@ body {
   --color-error: #FF0000;
   --color-error-20: rgba(255, 0, 0, 0.2);
   --color-warning: #ffc300;
+  --color-gray-vvlight: #e7e7e7;
   --color-gray-vlight: #d3d3d3;
   --color-gray-light: #C4C4C4;
   --color-gray: #727272;
@@ -32,6 +33,7 @@ body {
   --layout-margin-small-md: 20px;
   --layout-margin-big-sm: 20px;
   --layout-margin-small-sm: 10px;
+  --layout-margin-md: 40px;
 
   --layout-gap-big-lg: 50px;
   --layout-gap-big-md: 30px;
@@ -46,17 +48,44 @@ body {
   --font-size-h3: 2rem;
   --font-size-h2: 2.4375rem;
   --font-size-h1: 3rem;
+
+  --cards-border-width: 3px;
+  --cards-shadow: 19px;
+  --cards-gap: 30px;
 }
 
 .dark {
   --color-white: #242424;
   --color-black: white;
   --color-gray: #a5a5a5;
+  --color-gray-vvlight: #2e2e2e;
+  --color-gray-vlight: #363636;
   --color-gray-light: #505050;
   --color-gray-dark: #999999;
   --color-secondary: #c8ff00;
   --color-border: #0f0f0f;
   --color-border-input: #7e7e7e;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray);
+
+  &:hover {
+    background: var(--color-gray-dark);
+  }
+  
+  &:active {
+    background: var(--color-black);
+  }
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-vlight);
 }
 
 a {

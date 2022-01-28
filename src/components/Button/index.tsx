@@ -6,10 +6,12 @@ import React from "react"
 import { ButtonHTMLAttributes } from "react"
 
 
+export type ButtonState = "default" | "loading"
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   iconComp?: React.ReactNode
-  state?: "default" | "loading"
-  size?: "regular" | "medium" | "large" | "small" | "very-large"
+  state?: ButtonState
+  size?: "regular" | "medium" | "large" | "small" | "very-small" | "very-large"
   color?: "black" | "primary" | "secondary" | "transparent"
   className?: string
   iconSide?: "left" | "right"

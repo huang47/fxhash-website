@@ -9,6 +9,7 @@ export const Qu_objkt = gql`
       owner {
         id
         name
+        flag
         avatarUri
       }
       name
@@ -22,10 +23,12 @@ export const Qu_objkt = gql`
         author {
           id
           name
+          flag
           avatarUri
         }
       }
       metadata
+      metadataUri
       features
       rarity
       assigned
@@ -38,6 +41,7 @@ export const Qu_objkt = gql`
         issuer {
           id
           name
+          flag
           avatarUri
         }
       }
@@ -49,11 +53,13 @@ export const Qu_objkt = gql`
         issuer {
           id
           name
+          flag
           avatarUri
         }
         target {
           id
           name
+          flag
           avatarUri
         }
         objkt {
@@ -73,6 +79,7 @@ export const Qu_objktsFeed = gql`
       owner {
         id
         name
+        flag
         avatarUri
       }
       name
@@ -84,6 +91,7 @@ export const Qu_objktsFeed = gql`
         metadata
         author {
           id
+          flag
           name
           avatarUri
         }
@@ -99,11 +107,6 @@ export const Qu_objktsFeed = gql`
       offer {
         id
         price
-        issuer {
-          id
-          name
-          avatarUri
-        }
       }
     }
   }

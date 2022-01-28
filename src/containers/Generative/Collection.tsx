@@ -7,14 +7,10 @@ import { Spacing } from "../../components/Layout/Spacing"
 import { useQuery } from "@apollo/client"
 import { Qu_genTokenObjkts } from "../../queries/generative-token"
 import { Pagination } from "../../components/Pagination/Pagination"
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState } from "react"
 import { Objkt } from "../../types/entities/Objkt"
 import { ObjktCard } from "../../components/Card/ObjktCard"
-import { LoaderBlock } from "../../components/Layout/LoaderBlock"
-import { CardLoading } from "../../components/Card/CardLoading"
 import { CardsLoading } from "../../components/Card/CardsLoading"
-import { useRouter } from "next/router"
-import { useClientEffect } from "../../utils/hookts"
 
 
 const ITEMS_PER_PAGE = 15
@@ -24,8 +20,6 @@ interface Props {
 }
 
 export function GenerativeCollection({ token }: Props) {
-  // const router = useRouter()
-  // console.log(router)
   const [page, setPage] = useState<number>(0)
 
   const { data, loading } = useQuery(Qu_genTokenObjkts, {
@@ -39,24 +33,6 @@ export function GenerativeCollection({ token }: Props) {
 
   // derive the active data from the active page
   const objkts: Objkt[]|null = data?.generativeToken.objkts
-
-  // when the page changes, updates the route
-  // useClientEffect(() => {
-  //   const search = new URLSearchParams(window.location.search)
-  //   const urlPage = search.get("page")
-  //   console.log(window.location)
-  //   console.log(urlPage)
-  //   // console.log(window.location)
-  //   const targetPage = (page+1)
-  //   try {
-  //     if (parseInt(urlPage) !== targetPage) {
-  //       search.set("page", ""+targetPage)
-  //       console.log(search.toString())
-  //       // window.history.pushState({}, `page ${page}`, )
-  //     }
-  //   }
-  //   catch {}
-  // }, [page])
 
   return (
     token.objktsCount > 0 ? (

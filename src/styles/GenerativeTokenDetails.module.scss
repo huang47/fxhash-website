@@ -1,9 +1,30 @@
 @import './Variables.scss';
 
+.artwork_header {
+}
+
+.artwork_header_mobile {
+  display: none;
+}
+
+@media (max-width: $breakpoint-md) {
+  .artwork_header {
+    display: none;
+  }
+  
+  .artwork_header_mobile {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
 .presentation {
   width: 100%;
   display: flex;
-  gap: var(--layout-gap-small-lg);
+  gap: var(--layout-margin-big-md);
 
   header {
     margin-left: -20px;
@@ -58,7 +79,7 @@
   align-self: flex-start;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   width: 100%;
 }
 
@@ -82,7 +103,7 @@
 }
 
 .artwork-details {
-  width: min(400px, 100%);
+  width: min(300px, 100%);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -112,15 +133,25 @@
   }
 }
 
+@media (max-width: $breakpoint-sm) {
+  .artwork_buttons {
+    button, a {
+      width: 50px;
+
+      & > span {
+        display: none;
+      }
+      i {
+        font-size: 1.2em;
+      }
+    }
+  }
+}
+
 .buttons {
   display: flex;
   flex-direction: column;
   gap: var(--layout-margin-small-sm);
   align-items: flex-start;
   width: 100%;
-}
-
-.lock_container {
-  display: flex;
-  align-items: center;
 }

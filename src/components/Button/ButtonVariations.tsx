@@ -5,6 +5,7 @@ import { Button } from "."
 import { useMemo } from "react"
 import { generateFxHash } from "../../utils/hash"
 import { uniq } from "lodash"
+import { HoverTitle } from "../Utils/HoverTitle"
 
 interface Props {
   token: GenerativeToken
@@ -71,6 +72,11 @@ export function ButtonVariations({
         )
       }
     }
+    else {
+      return (
+        <i aria-hidden className="fas fa-infinity"/>
+      )
+    }
   }, [previewHash])
 
   // update the preview hash, either by looping through available hashes, or by
@@ -88,23 +94,19 @@ export function ButtonVariations({
     else {
       // find index of the active hash
       let idx = hashes?.indexOf(previewHash!)
-      console.log(idx)
       idx = idx === -1 || idx == null ? 0 : idx
       // compute the new index
       idx = (idx+1) % hashes.length
-      console.log(idx)
-      console.log(hashes[idx])
       onChangeHash(hashes[idx])
     }
   }
 
   return (
-    <div className={cs(style.wrapper, {
-      [style.hover_enabled]: !!hoverMessage
-    })}>
+    <HoverTitle message={hoverMessage}>
       <Button
         type="button"
         size="small"
+        color="transparent"
         disabled={!activeSettings?.enabled}
         iconComp={icon}
         iconSide="right"
@@ -112,11 +114,6 @@ export function ButtonVariations({
       >
         variations
       </Button>
-      {hoverMessage && (
-        <div className={cs(style.hover_message)}>
-          {hoverMessage}
-        </div>
-      )}
-    </div>
+    </HoverTitle>
   )
 }

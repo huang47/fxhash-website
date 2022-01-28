@@ -16,7 +16,7 @@ import { RevealIframe } from "../../components/Reveal/RevealIframe"
 interface Props {
   hash: string
   generativeUri: string
-  previeweUri: string
+  previeweUri?: string
   features?: TokenFeature[]|null
 }
 
@@ -29,7 +29,15 @@ interface Props {
  */
 export function Reveal({ hash, generativeUri, previeweUri, features }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const viewUrl = useMemo<string>(() => `${ipfsGatewayUrl(generativeUri, "ipfsio")}?fxhash=${hash}`, [generativeUri])
+  const viewUrl = useMemo<string>(() => {
+    // the old system doesn't include fxhash in the generative Uri, so we have to add it if needed
+    if (generativeUri.includes("fxhash")) {
+      return ipfsGatewayUrl(generativeUri, "ipfsio")
+    }
+    else {
+      return `${ipfsGatewayUrl(generativeUri, "ipfsio")}?fxhash=${hash}`
+    }
+  }, [generativeUri])
 
   const reloadIframe = () => {
     if (iframeRef.current) {
@@ -50,6 +58,7 @@ export function Reveal({ hash, generativeUri, previeweUri, features }: Props) {
             iconComp={<i aria-hidden className="fas fa-redo"/>}
             iconSide="right"
             onClick={reloadIframe}
+            color="transparent"
           >
             reload
           </Button>
@@ -57,9 +66,11 @@ export function Reveal({ hash, generativeUri, previeweUri, features }: Props) {
             <Button
               isLink={true}
               size="small"
-              iconComp={<i aria-hidden className="fas fa-external-link-alt"></i>}
+              iconComp={<i aria-hidden className="fas fa-external-link-square"/>}
               // @ts-ignore
               target="_blank"
+              iconSide="right"
+              color="transparent"
             >
               open live
             </Button>

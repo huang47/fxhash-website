@@ -1,25 +1,31 @@
-import { gql, useLazyQuery, useQuery } from '@apollo/client'
+import layout from "../styles/Layout.module.scss"
+import styleSearch from "../components/Input/SearchInput.module.scss"
+import cs from "classnames"
+import { gql, useQuery } from '@apollo/client'
 import { CardsContainer } from '../components/Card/CardsContainer'
 import { ObjktCard } from '../components/Card/ObjktCard'
-import { LoaderBlock } from '../components/Layout/LoaderBlock'
 import { InfiniteScrollTrigger } from '../components/Utils/InfiniteScrollTrigger'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Spacing } from '../components/Layout/Spacing'
-import { Offer } from '../types/entities/Offer'
-import { AlgoliaSearch } from '../components/Search/AlgoliaSearch'
-import { searchIndexMarketplace } from '../services/Algolia'
+import { Offer, OfferFilters } from '../types/entities/Offer'
 import { IOptions, Select } from '../components/Input/Select'
 import { CardsLoading } from '../components/Card/CardsLoading'
+import { CardsExplorer } from "../components/Exploration/CardsExplorer"
+import { SearchHeader } from "../components/Search/SearchHeader"
+import { FiltersPanel } from "../components/Exploration/FiltersPanel"
+import { MarketplaceFilters } from "./Marketplace/MarketplaceFilters"
+import { ExploreTagDef, ExploreTags } from "../components/Exploration/ExploreTags"
+import { displayMutez } from "../utils/units"
+import { SearchInputControlled } from "../components/Input/SearchInputControlled"
 
 
 const ITEMS_PER_PAGE = 10
 
 const Qu_offers = gql`
-  query Query ($skip: Int, $take: Int, $price: String, $createdAt: String) {
-    offers(skip: $skip, take: $take, price: $price, createdAt: $createdAt) {
+  query Query ($skip: Int, $take: Int, $sort: OffersSortInput, $filters: OfferFilter) {
+    offers(skip: $skip, take: $take, sort: $sort, filters: $filters) {
+      id
       price
-      id
-      id
       objkt {
         id
         name
@@ -30,15 +36,11 @@ const Qu_offers = gql`
         offer {
           id
           price
-          issuer {
-            id
-            name
-            avatarUri
-          }
         }
         owner {
           id
           name
+          flag
           avatarUri
         }
         issuer {
@@ -47,6 +49,7 @@ const Qu_offers = gql`
           author {
             id
             name
+            flag
             avatarUri
           }
         }
@@ -55,56 +58,11 @@ const Qu_offers = gql`
   }
 `
 
-const Qu_offersByIds = gql`
-  query Query ($ids: [Float!]!, $createdAt: String, $price: String) {
-    offersByIds(ids: $ids, createdAt: $createdAt, price: $price) {
-      price
-      id
-      id
-      objkt {
-        id
-        name
-        slug
-        metadata
-        assigned
-        duplicate
-        offer {
-          id
-          price
-          issuer {
-            id
-            name
-            avatarUri
-          }
-        }
-        owner {
-          id
-          name
-          avatarUri
-        }
-        issuer {
-          flag
-          name
-          author {
-            id
-            name
-            avatarUri
-          }
-        }
-      }
-    }
-  }
-`
-
-const sortOptions: IOptions[] = [
+const generalSortOptions: IOptions[] = [
   {
     label: "recently listed",
     value: "createdAt-desc"
   },
-  // {
-  //   label: "recently created",
-  //   value: ""
-  // }
   {
     label: "price (high to low)",
     value: "price-desc",
@@ -119,6 +77,14 @@ const sortOptions: IOptions[] = [
   },
 ]
 
+const searchSortOptions: IOptions[] = [
+  {
+    label: "search relevance",
+    value: "relevance-desc",
+  },
+  ...generalSortOptions
+]
+
 function sortValueToSortVariable(val: string) {
   if (val === "pertinence") return {}
   const split = val.split("-")
@@ -131,11 +97,26 @@ interface Props {
 }
 
 export const Marketplace = ({}: Props) => {
-  const [searchResults, setSearchResults] = useState<Offer[]|null>(null)
-  const [searchLoading, setSearchLoading] = useState<boolean>(false)
-
+  // sort variables
   const [sortValue, setSortValue] = useState<string>("createdAt-desc")
-  const sortVariables = useMemo<Record<string, any>>(() => sortValueToSortVariable(sortValue), [sortValue])
+  const sort = useMemo<Record<string, any>>(() => sortValueToSortVariable(sortValue), [sortValue])
+  // sort options - when the search is triggered, options are updated to include relevance
+  const [sortOptions, setSortOptions] = useState<IOptions[]>(generalSortOptions)
+  // keeps track of the search option used before the search was triggered
+  const sortBeforeSearch = useRef<string>(sortValue)
+
+  // effect to update the sortBeforeSearch value whenever a sort changes
+  useEffect(() => {
+    if (sortValue !== "relevance-desc") {
+      sortBeforeSearch.current = sortValue
+    }
+  }, [sortValue])
+
+  // filters
+  const [filters, setFilters] = useState<OfferFilters>({})
+
+  // reference to an element at the top to scroll back
+  const topMarkerRef = useRef<HTMLDivElement>(null)
 
   // use to know when to stop loading
   const currentLength = useRef<number>(0)
@@ -146,7 +127,8 @@ export const Marketplace = ({}: Props) => {
     variables: {
       skip: 0,
       take: ITEMS_PER_PAGE,
-      ...sortVariables
+      sort,
+      filters,
     }
   })
 
@@ -173,62 +155,168 @@ export const Marketplace = ({}: Props) => {
   const offers: Offer[] = data?.offers
 
   useEffect(() => {
+    // first we scroll to the top
+    const top = (topMarkerRef.current?.offsetTop || 0) + 30
+    if (window.scrollY > top) {
+      window.scrollTo(0, top)
+    }
+
     currentLength.current = 0
     ended.current = false
     refetch?.({
       skip: 0,
       take: ITEMS_PER_PAGE,
-      ...sortVariables
+      sort,
+      filters,
     })
-  }, [sortVariables])
+  }, [sort, filters])
+
+  const addFilter = (filter: string, value: any) => {
+    setFilters({
+      ...filters,
+      [filter]: value
+    })  
+  }
+
+  const removeFilter = (filter: string) => {
+    addFilter(filter, undefined)
+    // if the filter is search string, we reset the sort to what ti was
+    if (filter === "searchQuery_eq" && sortValue === "relevance-desc") {
+      setSortValue(sortBeforeSearch.current)
+      setSortOptions(generalSortOptions)
+    }
+  }
+
+  // build the list of filters
+  const filterTags = useMemo<ExploreTagDef[]>(() => {
+    const tags: ExploreTagDef[] = []
+    for (const key in filters) {
+      let value: string|null = null
+      // @ts-ignore
+      if (filters[key] !== undefined) {
+        switch (key) {
+          case "price_gte":
+            //@ts-ignore
+            value = `price >= ${displayMutez(filters[key])} tez`
+            break
+          case "price_lte":
+            //@ts-ignore
+            value = `price <= ${displayMutez(filters[key])} tez`
+            break
+          case "tokenSupply_gte":
+            //@ts-ignore
+            value = `editions >= ${filters[key]}`
+            break
+          case "tokenSupply_lte":
+            //@ts-ignore
+            value = `editions <= ${filters[key]}`
+            break
+          case "authorVerified_eq":
+            //@ts-ignore
+            value = `artist: ${filters[key] ? "verified" : "un-verified"}`
+            break
+          case "fullyMinted_eq":
+            //@ts-ignore
+            value = `mint: ${filters[key] ? "completed" : "on-going"}`
+            break
+          case "searchQuery_eq":
+            //@ts-ignore
+            value = `search: ${filters[key]}`
+            break
+        }
+        if (value) {
+          tags.push({
+            value,
+            onClear: () => removeFilter(key)
+          })
+        }
+      }
+    }
+    return tags
+  }, [filters])
 
   return (
-    <>
-      <AlgoliaSearch
-        searchIndex={searchIndexMarketplace}
-        gqlMapQuery={Qu_offersByIds}
-        onResults={setSearchResults}
-        onLoading={setSearchLoading}
-        variables={sortVariables}
-      >
-        <Select
-          value={sortValue}
-          options={sortOptions}
-          onChange={setSortValue}
-        />
-      </AlgoliaSearch>
+    <CardsExplorer>
+      {({ 
+        filtersVisible,
+        setFiltersVisible,
+      }) => (
+        <>
+          <div ref={topMarkerRef}/>
+          <SearchHeader
+            hasFilters
+            filtersOpened={filtersVisible}
+            onToggleFilters={() => setFiltersVisible(!filtersVisible)}
+            sortSelectComp={
+              <Select
+                value={sortValue}
+                options={sortOptions}
+                onChange={setSortValue}
+              />
+            }
+          >
+            <SearchInputControlled
+              onSearch={(value) => {
+                if (value) {
+                  setSortOptions(searchSortOptions)
+                  setSortValue("relevance-desc")
+                  addFilter("searchQuery_eq", value)
+                }
+                else {
+                  removeFilter("searchQuery_eq")
+                  setSortOptions(generalSortOptions)
+                  if (sortValue === "relevance-desc") {
+                    setSortValue(sortBeforeSearch.current)
+                  }
+                }
+              }}
+              className={styleSearch.large_search}
+            />
+          </SearchHeader>
 
-      <Spacing size="large" />
+          <div className={cs(layout.cards_explorer, layout['padding-big'])}>
+            {filtersVisible && (
+              <FiltersPanel onClose={() => setFiltersVisible(false)}>
+                <MarketplaceFilters
+                  filters={filters}
+                  setFilters={setFilters}
+                />
+              </FiltersPanel>
+            )}
 
-      {searchLoading && (
-        <LoaderBlock height="100px">searching</LoaderBlock>
-      )}
-
-      {searchResults ? (
-        searchResults.length > 0 ? (
-          <CardsContainer>
-            {searchResults.map(offer => (
-              <ObjktCard key={offer.objkt.id} objkt={offer.objkt} />
-            ))}
-          </CardsContainer>
-        ):(
-          <p>Your query did not yield any results. 😟</p>
-        )
-      ):(
-        <InfiniteScrollTrigger onTrigger={infiniteScrollFetch} canTrigger={!!data && !loading}>
-          <CardsContainer>
-            <>
-              {offers?.length > 0 && offers.map(offer => (
-                <ObjktCard key={offer.objkt.id} objkt={offer.objkt}/>
-              ))}
-              {loading && (
-                <CardsLoading number={ITEMS_PER_PAGE} />
+            <div style={{width: "100%"}}>
+              {filterTags.length > 0 && (
+                <>
+                  <ExploreTags
+                    terms={filterTags}
+                    onClearAll={() => {
+                      setFilters({})
+                      setSortOptions(generalSortOptions)
+                      setSortValue(sortBeforeSearch.current)
+                    }}
+                  />
+                  <Spacing size="regular"/>
+                </>
               )}
-            </>
-          </CardsContainer>
-        </InfiniteScrollTrigger>
-      )}
 
-    </>
+              {!loading && offers?.length === 0 && (
+                <span>No results</span>
+              )}
+
+              <InfiniteScrollTrigger onTrigger={infiniteScrollFetch} canTrigger={!!data && !loading}>
+                <CardsContainer>
+                  {offers?.length > 0 && offers.map(offer => (
+                    <ObjktCard key={offer.id} objkt={offer.objkt}/>
+                  ))}
+                  {loading && (
+                    <CardsLoading number={ITEMS_PER_PAGE} />
+                  )}
+                </CardsContainer>
+              </InfiniteScrollTrigger>
+            </div>
+          </div>
+        </>
+      )}
+    </CardsExplorer>
   )
 }

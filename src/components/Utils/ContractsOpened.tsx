@@ -1,39 +1,59 @@
 import style from "./ContractsOpened.module.scss"
 import cs from "classnames"
-import { useContractStorage } from "../../utils/hookts"
-import { getMsUntilClose, getNextCycleStartTime } from "../../utils/schedule"
-import { useEffect, useState } from "react"
-import { getLocalTimezone } from "../../utils/timzones"
+import { getCyclesState } from "../../utils/schedule"
+import { useContext, useEffect, useMemo, useState } from "react"
+import { Countdown } from "./Countdown"
+import { addHours } from "date-fns"
+import { CyclesContext } from "../../context/Cycles"
+import { Loader } from "./Loader"
 
 export function ContractsOpened() {
-  const { data: issuerStorage } = useContractStorage(process.env.NEXT_PUBLIC_TZ_CT_ADDRESS_ISSUER!)
-  const [timeUntilClose, setTimeUntilClose] = useState<number>(0)
-  const [nextCycleStart, setNextCycleStart] = useState<number>(0)
-  const [mintTimeStatus, setMintTimeStatus] = useState<string>()
-  
+  // get cycles from context (directly from contracts)
+  const { cycles } = useContext(CyclesContext)
+
+  const [counter, setCounter] = useState<number>(0)
+  const [cyclesState, setCyclesState] = useState(getCyclesState(cycles))
+
   useEffect(() => {
-    setTimeUntilClose(getMsUntilClose())
-    setNextCycleStart(getNextCycleStartTime())
-    if (timeUntilClose < 0) {
-      // we are closed
-      const nextOpen = new Date(nextCycleStart)
-      const nextOpenString = nextOpen.toLocaleTimeString("en-US", {hour:'numeric'})
-      setMintTimeStatus(`(opens at ${nextOpenString})`)
-    }
-    else {
-      // we are open
-      const nextClose = new Date(Date.now() + timeUntilClose)
-      const nextCloseString = nextClose.toLocaleTimeString("en-US", {hour:'numeric'})
-      setMintTimeStatus(`(closes at ${nextCloseString})`)
-    }
-  })
+    setCyclesState(getCyclesState(cycles))
+  }, [cycles, counter])
+
+  const onEnd = () => {
+    setCounter(counter+1)
+    setTimeout(() => {
+      setCounter(counter+2)
+    }, 2000)
+  }
   
-  return issuerStorage ? (
-    <div className={cs(style.state, { [style.state_closed]: issuerStorage.paused })}>
-      <span>
-        MINT {issuerStorage.paused ? "CLOSED" : "OPENED"} {mintTimeStatus}
-      </span>
-      <div/>
-    </div>
-  ):null
+  return (
+    <>
+      {cycles.length === 0 ? (
+        <Loader size="small" />
+      ):(
+        !cyclesState.opened ? (
+          <div className={cs(style.state, style.state_closed)}>
+            <span>OPENS IN</span>
+            <span>
+              <Countdown
+                until={cyclesState.nextOpening}
+                onEnd={onEnd}
+              />
+            </span>
+            <div/>
+          </div>
+        ):(
+          <div className={cs(style.state)}>
+            <span>OPENED FOR </span>
+            <span>
+              <Countdown
+                until={cyclesState.nextClosing}
+                onEnd={onEnd}
+              />
+            </span>
+            <div/>
+          </div>
+        )
+      )}
+    </>
+  )
 }

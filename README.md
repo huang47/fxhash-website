@@ -41,6 +41,9 @@ NEXT_PUBLIC_TZ_CT_ADDRESS_ISSUER = KT1AEVuykWeuuFX7QkEAMNtffzwhe1Z98hJS
 NEXT_PUBLIC_TZ_CT_ADDRESS_MARKETPLACE = KT1Xo5B7PNBAeynZPmca4bRh6LQow4og1Zb9
 NEXT_PUBLIC_TZ_CT_ADDRESS_OBJKT = KT1KEa8z6vWXDJrVqtMrAeDVzsvxat3kHaCE
 NEXT_PUBLIC_TZ_CT_ADDRESS_USERREGISTER = KT1Ezht4PDKZri7aVppVGT4Jkw39sesaFnww
+NEXT_PUBLIC_TZ_CT_ADDRESS_TOK_MODERATION = KT1HgVuzNWVvnX16fahbV2LrnpwifYKoFMRd
+NEXT_PUBLIC_TZ_CT_ADDRESS_USER_MODERATION = KT1TWWQ6FtLoosVfZgTKV2q68TMZaENhGm54
+NEXT_PUBLIC_TZ_CT_ADDRESS_CYCLES = KT1ELEyZuzGXYafD2Gar6iegZN1YdQR3n3f5
 
 NEXT_PUBLIC_BETA_MODE = on
 NEXT_PUBLIC_GT_MIN_PRICE = 0
@@ -79,17 +82,22 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## How to contribute
 
+You can find opened issues on the [https://github.com/fxhash/fxhash-website/issues](https://github.com/fxhash/fxhash-website/issues) tab. If you want to implement a feature, please check first if an issue is opened and see what needs to be implemented in that regard. If no issue is opened, feel free to implement your feature as you wish.
+
+### Workflow
+
 * fork the **dev** branch of this repo
 * create a branch to implement a feature or fix a bug
 * when done, push the branch to your git repository fork
 * create a pull request againts the **dev** branch
-* I will review it and merge it eventually
+* the team will review it, and either request changes or merge it
 
 If you find a bug with the front end, you can create an issue.
 
 ### Branch naming convention
 
 * `feature/_`: add a feature
+* `change/_`: a change on a particular feature
 * `bug/_`: fix a bug
 
 ### Stack used
@@ -110,4 +118,4 @@ If you find a bug with the front end, you can create an issue.
 * `/services`: modules to interact with external services
 * `/styles`: the generic styles of the app
 * `/types`: type definitions
-* `/utils`: general-purpose utility functions
+* `/utils`: general-purpose utility functions 

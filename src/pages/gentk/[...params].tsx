@@ -139,6 +139,7 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
               iconComp={<i aria-hidden className="fas fa-redo"/>}
               iconSide="right"
               onClick={reload}
+              color="transparent"
             >
               reload
             </Button>
@@ -146,9 +147,11 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
               <Button
                 isLink={true}
                 size="small"
-                iconComp={<i aria-hidden className="fas fa-external-link-alt"></i>}
+                iconComp={<i aria-hidden className="fas fa-external-link-square"/>}
                 // @ts-ignore
                 target="_blank"
+                color="transparent"
+                iconSide="right"
               >
                 open live
               </Button>
@@ -175,6 +178,7 @@ const ObjktDetails: NextPage<Props> = ({ objkt }) => {
             {objkt.features && objkt.features.length > 0 && objkt.rarity && (
               <span><strong>Rarity:</strong> { displayPercentage(objkt.rarity) }% (lower is rarer)</span>
             )}
+            <span><strong>Metadata:</strong> <a target="_blank" href={ipfsGatewayUrl(objkt.metadataUri, "pinata-fxhash")}>{ objkt.metadataUri }</a></span>
           </div>
 
           {objkt.features && objkt.features.length > 0 && (
@@ -223,26 +227,25 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       idStr = context.params.params[0]
     }
   }
-  let token = null
+  let variables: Record<string, any> = {},
+      token = null
 
   if (idStr) {
     const id = parseInt(idStr as string)
     if (id === 0 || id) {
-      const { data } = await client.query({
-        query: Qu_objkt,
-        fetchPolicy: "no-cache",
-        variables: { id }
-      })
-      if (data) {
-        token = data.objkt
-      }
+      variables.id = id
     }
   }
   else if (slug) {
+    variables.slug = slug
+  }
+
+  // only run query if valid variables
+  if (Object.keys(variables).length > 0) {
     const { data } = await client.query({
       query: Qu_objkt,
       fetchPolicy: "no-cache",
-      variables: { slug }
+      variables
     })
     if (data) {
       token = data.objkt

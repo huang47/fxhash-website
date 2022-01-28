@@ -7,23 +7,24 @@ import colors from "../../../styles/Colors.module.css"
 import styleActivity from "../../../styles/Activity.module.scss"
 import cs from "classnames"
 import client from "../../../services/ApolloClient"
-import { GenerativeToken, GenTokFlag } from "../../../types/entities/GenerativeToken"
+import { GenerativeToken } from "../../../types/entities/GenerativeToken"
 import { Spacing } from '../../../components/Layout/Spacing'
 import { UserBadge } from '../../../components/User/UserBadge'
 import { MintProgress } from '../../../components/Artwork/MintProgress'
 import { Button } from '../../../components/Button'
-import { displayMutez, displayRoyalties } from '../../../utils/units'
 import { ipfsGatewayUrl } from '../../../services/Ipfs'
-import ClientOnly, { ClientOnlyEmpty } from '../../../components/Utils/ClientOnly'
+import { ClientOnlyEmpty } from '../../../components/Utils/ClientOnly'
 import { truncateEnd } from '../../../utils/strings'
-import { useRef, useState } from 'react'
-import { Qu_genToken, Qu_genTokenMarketplace } from '../../../queries/generative-token'
+import { useState } from 'react'
+import { Qu_genTokenMarketplace } from '../../../queries/generative-token'
 import { GenerativeActions } from '../../../containers/Generative/Actions'
 import { GenerativeFlagBanner } from '../../../containers/Generative/FlagBanner'
 import { ArtworkPreview } from '../../../components/Artwork/Preview'
 import { getGenerativeTokenUrl } from '../../../utils/generative-token'
 import { TabDefinition, Tabs } from '../../../components/Layout/Tabs'
 import { GenerativeOffersMarketplace } from '../../../containers/Marketplace/GenerativeOffersMarketplace'
+import { DisplayTezos } from '../../../components/Display/DisplayTezos'
+import { GenerativeStatsMarketplace } from '../../../containers/Marketplace/GenerativeStatsMarketplace'
 
 
 interface Props {
@@ -32,10 +33,13 @@ interface Props {
 
 const tabs: TabDefinition[] = [
   {
-    name: "Listed"
+    name: "listed"
   },
   {
-    name: "Recent trades"
+    name: "stats"
+  },
+  {
+    name: "recent trades"
   }
 ]
 
@@ -63,7 +67,7 @@ const GenerativeTokenMarketplace: NextPage<Props> = ({ token }) => {
 
       <GenerativeFlagBanner token={token}/>
 
-      <Spacing size="6x-large" />
+      <Spacing size="3x-large" />
 
       <section className={cs(style.presentation, layout['padding-big'])}>        
         <header className={cs(style.presentation_header)}>
@@ -80,10 +84,13 @@ const GenerativeTokenMarketplace: NextPage<Props> = ({ token }) => {
             />
             <Spacing size="small"/>
             <div className={cs(style.artwork_details)}>
-              <MintProgress
-                balance={token.balance}
-                supply={token.supply}
-              />
+              <div className={cs(style.progress_container)}>
+                <MintProgress
+                  balance={token.balance}
+                  supply={token.supply}
+                  originalSupply={token.originalSupply}
+                />
+              </div>
               <Spacing size="x-small"/>
               <Link href={getGenerativeTokenUrl(token)} passHref>
                 <Button isLink={true} size="small">
@@ -99,11 +106,11 @@ const GenerativeTokenMarketplace: NextPage<Props> = ({ token }) => {
         <div className={cs(style.metrics)}>
           <article className={cs(style.metric)}>
             <span>1st sales</span>
-            <strong>{ token.marketStats?.primTotal ? `${displayMutez(token.marketStats.primTotal)} tez` : "0" }</strong>
+            <strong>{ token.marketStats?.primVolumeTz != null ? (<DisplayTezos mutez={token.marketStats.primVolumeTz} />) : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>2nd sales (tez)</span>
-            <strong>{ token.marketStats?.secVolumeTz ? `${displayMutez(token.marketStats.secVolumeTz)} tez` : "/" }</strong>
+            <strong>{ token.marketStats?.secVolumeTz != null ? (<DisplayTezos mutez={token.marketStats.secVolumeTz} />) : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>2nd sales (nb)</span>
@@ -111,31 +118,31 @@ const GenerativeTokenMarketplace: NextPage<Props> = ({ token }) => {
           </article>
           <article className={cs(style.metric)}>
             <span>2nd sales 24h (tez)</span>
-            <strong>{ token.marketStats?.secVolumeTz24 ? `${displayMutez(token.marketStats.secVolumeTz24)} tez` : "/" }</strong>
+            <strong>{ token.marketStats?.secVolumeTz24 ? (<DisplayTezos mutez={token.marketStats.secVolumeTz24} />) : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>2nd sales 24h (nb)</span>
-            <strong>{ token.marketStats?.secVolumeTz24 ? token.marketStats.secVolumeNb24 : "/" }</strong>
+            <strong>{ token.marketStats?.secVolumeTz24 != null ? token.marketStats.secVolumeNb24 : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>Items for sale</span>
-            <strong>{ token.marketStats?.totalListing || "0" }</strong>
+            <strong>{ token.marketStats?.listed || "0" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>Lowest 2nd sale</span>
-            <strong>{ token.marketStats?.lowestSold ? `${displayMutez(token.marketStats.lowestSold)} tez` : "/" }</strong>
+            <strong>{ token.marketStats?.lowestSold != null ? (<DisplayTezos mutez={token.marketStats.lowestSold} formatBig={false} />) : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>Highest 2nd sale</span>
-            <strong>{ token.marketStats?.highestSold ? `${displayMutez(token.marketStats.highestSold)} tez` : "/" }</strong>
+            <strong>{ token.marketStats?.highestSold != null ? (<DisplayTezos mutez={token.marketStats.highestSold} formatBig={false} />) : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>Floor</span>
-            <strong>{ token.marketStats?.floor ? `${displayMutez(token.marketStats.floor)} tez` : "/" }</strong>
+            <strong>{ token.marketStats?.floor ? (<DisplayTezos mutez={token.marketStats.floor} />) : "/" }</strong>
           </article>
           <article className={cs(style.metric)}>
             <span>Median</span>
-            <strong>{ token.marketStats?.median ? `${displayMutez(token.marketStats.median)} tez` : "/" }</strong>
+            <strong>{ token.marketStats?.median ? (<DisplayTezos mutez={token.marketStats.median} />) : "/" }</strong>
           </article>
         </div>
       </section>
@@ -154,6 +161,12 @@ const GenerativeTokenMarketplace: NextPage<Props> = ({ token }) => {
         {tabActive === 0 ? (
           <ClientOnlyEmpty>
             <GenerativeOffersMarketplace
+              token={token}
+            />
+          </ClientOnlyEmpty>
+        ):tabActive === 1 ? (
+          <ClientOnlyEmpty>
+            <GenerativeStatsMarketplace
               token={token}
             />
           </ClientOnlyEmpty>
